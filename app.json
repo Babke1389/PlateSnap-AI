@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Platesnap AI",
+    "slug": "platesnap-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "platesnapai",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0D12",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Platesnap AI uses your camera to scan a photo of your food and estimate its calories.",
+        "NSPhotoLibraryUsageDescription": "Platesnap AI needs access to your photos so you can pick a picture of your meal to scan."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0D12",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Platesnap AI needs access to your photos so you can pick a picture of your meal to scan.",
+          "cameraPermission": "Platesnap AI uses your camera to scan a photo of your food and estimate its calories."
+        }
+      ]
+    ]
+  }
+}
