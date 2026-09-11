@@ -16,6 +16,7 @@
       }
     },
     "android": {
+      "package": "com.platesnapai.app",
       "adaptiveIcon": {
         "backgroundColor": "#0B0D12",
         "foregroundImage": "./assets/android-icon-foreground.png",
