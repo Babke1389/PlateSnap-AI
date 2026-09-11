@@ -14,8 +14,11 @@ const EMPTY_STATE: AppState = {
   beforePhoto: null,
   afterPhoto: null,
   isPro: false,
+  trialEndsAt: null,
   onboardingComplete: false,
 };
+
+const TRIAL_DAYS = 7;
 
 function uid(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -30,6 +33,7 @@ interface Store extends AppState {
   addWater: (ml: number, dateISO?: string) => void;
   addWeightEntry: (weightKg: number, dateISO?: string) => void;
   setPro: (value: boolean) => void;
+  startTrial: () => void;
   resetAll: () => void;
   mealsForDate: (dateISO: string) => Meal[];
   totalsForDate: (dateISO: string) => { calories: number; proteinG: number; carbsG: number; fatG: number };
@@ -122,7 +126,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const setPro = (value: boolean) => setState((s) => ({ ...s, isPro: value }));
+  const setPro = (value: boolean) =>
+    setState((s) => ({ ...s, isPro: value, trialEndsAt: value ? s.trialEndsAt : null }));
+
+  const startTrial = () => {
+    const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    setState((s) => ({ ...s, isPro: true, trialEndsAt }));
+  };
 
   const resetAll = () => setState(EMPTY_STATE);
 
@@ -208,6 +218,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addWater,
       addWeightEntry,
       setPro,
+      startTrial,
       resetAll,
       mealsForDate,
       totalsForDate,

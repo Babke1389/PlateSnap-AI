@@ -40,7 +40,7 @@ export default function Result() {
 
   const onStart = () => {
     completeOnboarding(profile);
-    router.replace('/(tabs)');
+    router.replace('/onboarding/trial');
   };
 
   return (
