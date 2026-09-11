@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -18,6 +19,7 @@ import { Card } from '../src/components/Card';
 import { Segmented } from '../src/components/Segmented';
 import { TextField } from '../src/components/TextField';
 import { analyzeMealPhoto, analyzeMealText, isAiConfigured, NoFoodDetectedError } from '../src/lib/ai';
+import { BarcodeProduct, lookupBarcode, ProductNotFoundError } from '../src/lib/barcode';
 import { FREE_DAILY_PHOTO_SCANS } from '../src/lib/constants';
 import { useStore } from '../src/lib/store';
 import { MealAnalysis } from '../src/lib/types-ai';
@@ -25,7 +27,7 @@ import { colors, font, radius, spacing } from '../src/theme';
 
 const aiConfigured = isAiConfigured();
 
-type Mode = 'text' | 'photo' | 'manual';
+type Mode = 'text' | 'photo' | 'manual' | 'barcode';
 
 export default function AddMeal() {
   const router = useRouter();
@@ -46,6 +48,13 @@ export default function AddMeal() {
   const [manualCarbs, setManualCarbs] = useState('');
   const [manualFat, setManualFat] = useState('');
 
+  const [permission, requestPermission] = useCameraPermissions();
+  const [barcodeProduct, setBarcodeProduct] = useState<BarcodeProduct | null>(null);
+  const [barcodeGrams, setBarcodeGrams] = useState('100');
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
+  const scannedRef = useRef(false);
+
   const photoScansUsedToday = photoScansToday();
   const canUsePhotoFree = photoScansUsedToday < FREE_DAILY_PHOTO_SCANS;
   const canUsePhoto = isPro || canUsePhotoFree;
@@ -56,6 +65,75 @@ export default function AddMeal() {
     setPhotoUri(null);
     setErrorText(null);
     setSaveAsFavorite(false);
+    setBarcodeProduct(null);
+    setBarcodeGrams('100');
+    setBarcodeError(null);
+    scannedRef.current = false;
+  };
+
+  const onBarcodeScanned = async ({ data }: { data: string }) => {
+    if (scannedRef.current) return;
+    scannedRef.current = true;
+    setBarcodeLoading(true);
+    setBarcodeError(null);
+    try {
+      const product = await lookupBarcode(data);
+      setBarcodeProduct(product);
+    } catch (err) {
+      setBarcodeError(
+        err instanceof ProductNotFoundError
+          ? "Couldn't find this product in the database — try Manual entry instead."
+          : err instanceof Error
+          ? err.message
+          : 'Something went wrong looking up this barcode.'
+      );
+    } finally {
+      setBarcodeLoading(false);
+    }
+  };
+
+  const rescanBarcode = () => {
+    setBarcodeProduct(null);
+    setBarcodeError(null);
+    setBarcodeGrams('100');
+    scannedRef.current = false;
+  };
+
+  const barcodeGramsNum = Number(barcodeGrams) || 0;
+  const barcodeScale = barcodeGramsNum / 100;
+  const barcodeScaled = barcodeProduct
+    ? {
+        calories: Math.round(barcodeProduct.per100g.calories * barcodeScale),
+        proteinG: Math.round(barcodeProduct.per100g.proteinG * barcodeScale),
+        carbsG: Math.round(barcodeProduct.per100g.carbsG * barcodeScale),
+        fatG: Math.round(barcodeProduct.per100g.fatG * barcodeScale),
+      }
+    : null;
+
+  const onLogBarcode = () => {
+    if (!barcodeProduct || !barcodeScaled || barcodeGramsNum <= 0) return;
+    const finalDescription = `${barcodeProduct.name}${
+      barcodeProduct.brand ? ` (${barcodeProduct.brand})` : ''
+    } — ${barcodeGramsNum}g`;
+    addMeal({
+      source: 'barcode',
+      description: finalDescription,
+      calories: barcodeScaled.calories,
+      proteinG: barcodeScaled.proteinG,
+      carbsG: barcodeScaled.carbsG,
+      fatG: barcodeScaled.fatG,
+      items: [barcodeProduct.name],
+    });
+    if (isPro && saveAsFavorite) {
+      addFavorite({
+        description: finalDescription,
+        calories: barcodeScaled.calories,
+        proteinG: barcodeScaled.proteinG,
+        carbsG: barcodeScaled.carbsG,
+        fatG: barcodeScaled.fatG,
+      });
+    }
+    router.back();
   };
 
   const onAnalyzeText = async () => {
@@ -175,6 +253,7 @@ export default function AddMeal() {
               { label: 'Describe', value: 'text' },
               { label: 'Manual', value: 'manual' },
               { label: canUsePhoto ? 'Photo' : 'Photo (Pro)', value: 'photo' },
+              { label: 'Barcode', value: 'barcode' },
             ]}
             value={mode}
             onChange={(m) => {
@@ -302,6 +381,84 @@ export default function AddMeal() {
                 ) : null}
                 <Button label="Log this meal" onPress={onLogManual} disabled={!canLogManual} />
               </>
+            ) : mode === 'barcode' ? (
+              !permission ? null : !permission.granted ? (
+                <Card style={styles.lockedCard}>
+                  <Ionicons name="barcode" size={28} color={colors.orange} />
+                  <Text style={styles.lockedTitle}>Camera access needed</Text>
+                  <Text style={styles.lockedSub}>
+                    Allow camera access to scan a product's barcode.
+                  </Text>
+                  <Button label="Grant camera access" onPress={requestPermission} />
+                </Card>
+              ) : barcodeError ? (
+                <Card style={styles.warnCard}>
+                  <Ionicons name="alert-circle" size={18} color={colors.red} />
+                  <Text style={styles.warnText}>{barcodeError}</Text>
+                </Card>
+              ) : barcodeProduct && barcodeScaled ? (
+                <Card style={styles.resultCard}>
+                  <Text style={styles.resultTitle}>{barcodeProduct.name}</Text>
+                  {barcodeProduct.brand ? (
+                    <Text style={styles.resultDisclaimer}>{barcodeProduct.brand}</Text>
+                  ) : null}
+                  <View style={{ width: '100%', marginTop: spacing.md }}>
+                    <TextField
+                      label="Amount eaten"
+                      keyboardType="number-pad"
+                      suffix="g"
+                      value={barcodeGrams}
+                      onChangeText={setBarcodeGrams}
+                    />
+                  </View>
+                  <Text style={styles.resultCals}>{barcodeScaled.calories} kcal</Text>
+                  <Text style={styles.resultMacros}>
+                    Protein {barcodeScaled.proteinG}g · Carbs {barcodeScaled.carbsG}g · Fat{' '}
+                    {barcodeScaled.fatG}g
+                  </Text>
+                  <Text style={styles.resultDisclaimer}>
+                    Per 100g: {barcodeProduct.per100g.calories} kcal · P {barcodeProduct.per100g.proteinG}g
+                    · C {barcodeProduct.per100g.carbsG}g · F {barcodeProduct.per100g.fatG}g — from Open
+                    Food Facts.
+                  </Text>
+                  {isPro ? (
+                    <Pressable style={styles.favoriteToggle} onPress={() => setSaveAsFavorite((v) => !v)}>
+                      <Ionicons
+                        name={saveAsFavorite ? 'star' : 'star-outline'}
+                        size={18}
+                        color={saveAsFavorite ? colors.lime : colors.textFaint}
+                      />
+                      <Text style={styles.favoriteToggleText}>Save as favorite for next time</Text>
+                    </Pressable>
+                  ) : null}
+                  <Button
+                    label="Log this meal"
+                    onPress={onLogBarcode}
+                    disabled={barcodeGramsNum <= 0}
+                    style={{ marginTop: spacing.md }}
+                  />
+                  <Button label="Scan a different product" variant="ghost" onPress={rescanBarcode} />
+                </Card>
+              ) : (
+                <>
+                  <View style={styles.scannerWrap}>
+                    <CameraView
+                      style={StyleSheet.absoluteFill}
+                      facing="back"
+                      barcodeScannerSettings={{
+                        barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
+                      }}
+                      onBarcodeScanned={barcodeLoading ? undefined : onBarcodeScanned}
+                    />
+                    <View style={styles.scannerFrame} pointerEvents="none" />
+                  </View>
+                  <Text style={styles.hint}>
+                    {barcodeLoading
+                      ? 'Looking up product...'
+                      : "Point your camera at a product's barcode."}
+                  </Text>
+                </>
+              )
             ) : !canUsePhoto ? (
               <Card style={styles.lockedCard}>
                 <Ionicons name="lock-closed" size={28} color={colors.orange} />
@@ -496,6 +653,22 @@ const styles = StyleSheet.create({
     fontSize: font.size.xs,
     textAlign: 'center',
     marginBottom: spacing.md,
+  },
+  scannerWrap: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scannerFrame: {
+    width: '70%',
+    height: '40%',
+    borderWidth: 2,
+    borderColor: colors.lime,
+    borderRadius: radius.md,
   },
   photoButtons: { flexDirection: 'row', gap: spacing.md },
   photoBtn: {

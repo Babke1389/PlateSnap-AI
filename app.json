@@ -16,6 +16,7 @@
       }
     },
     "android": {
+      "package": "com.platesnapai.app",
       "adaptiveIcon": {
         "backgroundColor": "#0B0D12",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -34,6 +35,12 @@
         {
           "photosPermission": "Platesnap AI needs access to your photos so you can pick a picture of your meal to scan.",
           "cameraPermission": "Platesnap AI uses your camera to scan a photo of your food and estimate its calories."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Platesnap AI uses your camera to scan a product's barcode and look up its nutrition."
         }
       ]
     ]

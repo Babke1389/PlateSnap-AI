@@ -36,7 +36,7 @@ export interface Meal {
   id: string;
   dateISO: string; // yyyy-mm-dd
   createdAt: string;
-  source: 'text' | 'photo' | 'manual';
+  source: 'text' | 'photo' | 'manual' | 'barcode';
   description: string;
   photoUri?: string;
   calories: number;
@@ -83,5 +83,6 @@ export interface AppState {
   beforePhoto: ProgressPhoto | null;
   afterPhoto: ProgressPhoto | null;
   isPro: boolean;
+  trialEndsAt: string | null;
   onboardingComplete: boolean;
 }

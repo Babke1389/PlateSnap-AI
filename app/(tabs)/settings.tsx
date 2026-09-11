@@ -17,8 +17,18 @@ const LEVELS: ActivityLevel[] = ['sedentary', 'light', 'moderate', 'active', 've
 
 export default function Settings() {
   const router = useRouter();
-  const { profile, updateProfile, isPro, setPro, resetAll, meals, weightLog, favorites, removeFavorite } =
-    useStore();
+  const {
+    profile,
+    updateProfile,
+    isPro,
+    setPro,
+    trialEndsAt,
+    resetAll,
+    meals,
+    weightLog,
+    favorites,
+    removeFavorite,
+  } = useStore();
   const [goalWeightKg, setGoalWeightKg] = useState(String(profile?.goalWeightKg ?? ''));
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>(
     profile?.activityLevel ?? 'moderate'
@@ -26,6 +36,11 @@ export default function Settings() {
   const [exporting, setExporting] = useState(false);
 
   if (!profile) return null;
+
+  const trialActive = isPro && !!trialEndsAt && new Date(trialEndsAt).getTime() > Date.now();
+  const trialDaysLeft = trialActive
+    ? Math.max(1, Math.ceil((new Date(trialEndsAt!).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    : 0;
 
   const dirty = Number(goalWeightKg) !== profile.goalWeightKg || activityLevel !== profile.activityLevel;
 
@@ -73,9 +88,13 @@ export default function Settings() {
 
         <Card style={styles.proCard}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.proTitle}>{isPro ? 'Platesnap AI Pro' : 'Free plan'}</Text>
+            <Text style={styles.proTitle}>
+              {trialActive ? 'Free trial active' : isPro ? 'Platesnap AI Pro' : 'Free plan'}
+            </Text>
             <Text style={styles.proSub}>
-              {isPro
+              {trialActive
+                ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your trial — unlimited photo scans, favorites, data export, and Before & After are unlocked.`
+                : isPro
                 ? 'Unlimited photo scans, favorites, data export, and Before & After are unlocked.'
                 : 'Unlock unlimited photo scans, saved favorites, data export, and Before & After photos.'}
             </Text>

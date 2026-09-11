@@ -77,6 +77,8 @@ export default function Diary() {
                       ? 'camera'
                       : meal.source === 'manual'
                       ? 'create-outline'
+                      : meal.source === 'barcode'
+                      ? 'barcode'
                       : 'chatbubble-ellipses'
                   }
                   size={16}
