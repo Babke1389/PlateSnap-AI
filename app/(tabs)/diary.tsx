@@ -1,30 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../src/components/Card';
-import { todayISO } from '../../src/lib/calories';
+import { addDaysISO, formatDayLabel, todayISO } from '../../src/lib/calories';
 import { useStore } from '../../src/lib/store';
 import { colors, font, radius, spacing } from '../../src/theme';
 
-function addDays(iso: string, delta: number): string {
-  const d = new Date(iso + 'T00:00:00');
-  d.setDate(d.getDate() + delta);
-  return d.toISOString().slice(0, 10);
-}
-
-function formatDate(iso: string): string {
-  const today = todayISO();
-  if (iso === today) return 'Today';
-  if (iso === addDays(today, -1)) return 'Yesterday';
-  return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
 export default function Diary() {
+  const router = useRouter();
   const { mealsForDate, totalsForDate, removeMeal, targets } = useStore();
   const [dateISO, setDateISO] = useState(todayISO());
 
@@ -42,13 +27,13 @@ export default function Diary() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.dateNav}>
-        <Pressable style={styles.navBtn} onPress={() => setDateISO(addDays(dateISO, -1))}>
+        <Pressable style={styles.navBtn} onPress={() => setDateISO(addDaysISO(dateISO, -1))}>
           <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.dateLabel}>{formatDate(dateISO)}</Text>
+        <Text style={styles.dateLabel}>{formatDayLabel(dateISO)}</Text>
         <Pressable
           style={[styles.navBtn, isToday && styles.navBtnDisabled]}
-          onPress={() => !isToday && setDateISO(addDays(dateISO, 1))}
+          onPress={() => !isToday && setDateISO(addDaysISO(dateISO, 1))}
           disabled={isToday}
         >
           <Ionicons name="chevron-forward" size={20} color={isToday ? colors.textFaint : colors.textPrimary} />
@@ -78,7 +63,7 @@ export default function Diary() {
                       : meal.source === 'manual'
                       ? 'create-outline'
                       : meal.source === 'barcode'
-                      ? 'barcode'
+                      ? 'barcode-outline'
                       : 'chatbubble-ellipses'
                   }
                   size={16}
@@ -98,8 +83,15 @@ export default function Diary() {
             </Card>
           ))
         )}
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
+
+      <Pressable
+        style={styles.fab}
+        onPress={() => router.push({ pathname: '/add-meal', params: { date: dateISO } })}
+      >
+        <Ionicons name="add" size={30} color="#0B0D12" />
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -173,4 +165,20 @@ const styles = StyleSheet.create({
   mealMeta: { color: colors.textFaint, fontSize: font.size.xs, marginTop: 2 },
   mealCals: { color: colors.textPrimary, fontWeight: '800', fontSize: font.size.md, marginLeft: spacing.sm },
   deleteBtn: { marginLeft: spacing.md, padding: 4 },
+  fab: {
+    position: 'absolute',
+    right: spacing.lg,
+    bottom: spacing.lg,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.lime,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
 });

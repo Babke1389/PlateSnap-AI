@@ -72,12 +72,33 @@ export interface ProgressPhoto {
   weightKg: number;
 }
 
+export type WorkoutType = 'cardio' | 'strength';
+
+export interface Workout {
+  id: string;
+  dateISO: string;
+  createdAt: string;
+  type: WorkoutType;
+  durationMin: number;
+}
+
+export interface Reminder {
+  id: string;
+  label: string;
+  hour: number; // 0-23, local time
+  minute: number; // 0-59
+  enabled: boolean;
+  notificationId: string | null;
+}
+
 export interface AppState {
   profile: Profile | null;
   targets: Targets | null;
   meals: Meal[];
   weightLog: WeightEntry[];
   water: WaterEntry[];
+  workouts: Workout[];
+  reminders: Reminder[];
   favorites: FavoriteMeal[];
   photoScanDates: string[];
   beforePhoto: ProgressPhoto | null;

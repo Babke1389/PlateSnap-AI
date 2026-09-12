@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useRef, useState } from 'react';
@@ -20,6 +20,7 @@ import { Segmented } from '../src/components/Segmented';
 import { TextField } from '../src/components/TextField';
 import { analyzeMealPhoto, analyzeMealText, isAiConfigured, NoFoodDetectedError } from '../src/lib/ai';
 import { BarcodeProduct, lookupBarcode, ProductNotFoundError } from '../src/lib/barcode';
+import { formatDayLabel, todayISO } from '../src/lib/calories';
 import { FREE_DAILY_PHOTO_SCANS } from '../src/lib/constants';
 import { useStore } from '../src/lib/store';
 import { MealAnalysis } from '../src/lib/types-ai';
@@ -31,6 +32,8 @@ type Mode = 'text' | 'photo' | 'manual' | 'barcode';
 
 export default function AddMeal() {
   const router = useRouter();
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  const targetDate = typeof dateParam === 'string' ? dateParam : undefined;
   const { isPro, addMeal, favorites, photoScansToday, recordPhotoScan, addFavorite, logFavorite } =
     useStore();
   const [mode, setMode] = useState<Mode>('text');
@@ -123,6 +126,7 @@ export default function AddMeal() {
       carbsG: barcodeScaled.carbsG,
       fatG: barcodeScaled.fatG,
       items: [barcodeProduct.name],
+      dateISO: targetDate,
     });
     if (isPro && saveAsFavorite) {
       addFavorite({
@@ -199,6 +203,7 @@ export default function AddMeal() {
       carbsG: result.carbsG,
       fatG: result.fatG,
       items: result.items,
+      dateISO: targetDate,
     });
     if (isPro && saveAsFavorite) {
       addFavorite({
@@ -223,7 +228,7 @@ export default function AddMeal() {
       carbsG: Math.round(Number(manualCarbs)) || 0,
       fatG: Math.round(Number(manualFat)) || 0,
     };
-    addMeal({ source: 'manual', ...favorite });
+    addMeal({ source: 'manual', ...favorite, dateISO: targetDate });
     if (isPro && saveAsFavorite) {
       addFavorite(favorite);
     }
@@ -233,14 +238,19 @@ export default function AddMeal() {
   const onLogFavorite = (favId: string) => {
     const fav = favorites.find((f) => f.id === favId);
     if (!fav) return;
-    logFavorite(fav);
+    logFavorite(fav, targetDate);
     router.back();
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Add a meal</Text>
+        <View>
+          <Text style={styles.title}>Add a meal</Text>
+          {targetDate && targetDate !== todayISO() ? (
+            <Text style={styles.headerSubtitle}>Logging to {formatDayLabel(targetDate)}</Text>
+          ) : null}
+        </View>
         <Pressable onPress={() => router.back()} style={styles.closeBtn}>
           <Ionicons name="close" size={22} color={colors.textPrimary} />
         </Pressable>
@@ -581,6 +591,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   title: { color: colors.textPrimary, fontSize: font.size.lg, fontWeight: '800' },
+  headerSubtitle: { color: colors.textFaint, fontSize: font.size.xs, marginTop: 2 },
   closeBtn: {
     width: 34,
     height: 34,

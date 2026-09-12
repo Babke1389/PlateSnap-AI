@@ -1,7 +1,18 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { calcTargets, todayISO } from './calories';
+import { calcTargets, toLocalISODate, todayISO } from './calories';
 import { loadState, saveState } from './storage';
-import { AppState, FavoriteMeal, Meal, Profile, ProgressPhoto, WaterEntry, WeightEntry } from './types';
+import {
+  AppState,
+  FavoriteMeal,
+  Meal,
+  Profile,
+  ProgressPhoto,
+  Reminder,
+  WaterEntry,
+  WeightEntry,
+  Workout,
+  WorkoutType,
+} from './types';
 
 const EMPTY_STATE: AppState = {
   profile: null,
@@ -9,6 +20,8 @@ const EMPTY_STATE: AppState = {
   meals: [],
   weightLog: [],
   water: [],
+  workouts: [],
+  reminders: [],
   favorites: [],
   photoScanDates: [],
   beforePhoto: null,
@@ -46,6 +59,12 @@ interface Store extends AppState {
   logFavorite: (favorite: FavoriteMeal, dateISO?: string) => void;
   setProgressPhoto: (which: 'before' | 'after', uri: string) => void;
   clearProgressPhoto: (which: 'before' | 'after') => void;
+  addWorkout: (type: WorkoutType, durationMin: number, dateISO?: string) => void;
+  removeWorkout: (id: string) => void;
+  workoutsForDate: (dateISO: string) => Workout[];
+  addReminder: (reminder: Omit<Reminder, 'id'>) => Reminder;
+  removeReminder: (id: string) => void;
+  updateReminder: (id: string, patch: Partial<Reminder>) => void;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -158,7 +177,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     let streak = 0;
     const cursor = new Date();
     for (;;) {
-      const iso = cursor.toISOString().slice(0, 10);
+      const iso = toLocalISODate(cursor);
       if (daysWithMeals.has(iso)) {
         streak += 1;
         cursor.setDate(cursor.getDate() - 1);
@@ -207,6 +226,37 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((s) => (which === 'before' ? { ...s, beforePhoto: null } : { ...s, afterPhoto: null }));
   };
 
+  const addWorkout: Store['addWorkout'] = (type, durationMin, dateISO = todayISO()) => {
+    const workout: Workout = {
+      id: uid(),
+      dateISO,
+      createdAt: new Date().toISOString(),
+      type,
+      durationMin,
+    };
+    setState((s) => ({ ...s, workouts: [workout, ...s.workouts] }));
+  };
+
+  const removeWorkout = (id: string) =>
+    setState((s) => ({ ...s, workouts: s.workouts.filter((w) => w.id !== id) }));
+
+  const workoutsForDate = (dateISO: string) => state.workouts.filter((w) => w.dateISO === dateISO);
+
+  const addReminder: Store['addReminder'] = (reminder) => {
+    const withId: Reminder = { ...reminder, id: uid() };
+    setState((s) => ({ ...s, reminders: [...s.reminders, withId] }));
+    return withId;
+  };
+
+  const removeReminder = (id: string) =>
+    setState((s) => ({ ...s, reminders: s.reminders.filter((r) => r.id !== id) }));
+
+  const updateReminder: Store['updateReminder'] = (id, patch) =>
+    setState((s) => ({
+      ...s,
+      reminders: s.reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    }));
+
   const value = useMemo<Store>(
     () => ({
       ...state,
@@ -231,6 +281,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       logFavorite,
       setProgressPhoto,
       clearProgressPhoto,
+      addWorkout,
+      removeWorkout,
+      workoutsForDate,
+      addReminder,
+      removeReminder,
+      updateReminder,
     }),
     [state, isLoading]
   );
