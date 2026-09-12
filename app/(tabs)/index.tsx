@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../src/components/Card';
 import { MacroBar } from '../../src/components/MacroBar';
+import { ReminderCard } from '../../src/components/ReminderCard';
 import { Ring } from '../../src/components/Ring';
-import { todayISO } from '../../src/lib/calories';
+import { WeekStrip } from '../../src/components/WeekStrip';
+import { WorkoutCard } from '../../src/components/WorkoutCard';
+import { formatDayLabel, todayISO } from '../../src/lib/calories';
 import { useStore } from '../../src/lib/store';
 import { colors, font, radius, spacing } from '../../src/theme';
 
@@ -15,13 +18,14 @@ const WATER_STEP_ML = 250;
 
 export default function Home() {
   const router = useRouter();
-  const { profile, targets, totalsForDate, mealsForDate, waterForDate, addWater, streakDays } =
+  const { profile, targets, isPro, totalsForDate, mealsForDate, waterForDate, addWater, streakDays } =
     useStore();
-  const today = todayISO();
-  const totals = totalsForDate(today);
-  const meals = mealsForDate(today).slice(0, 4);
-  const water = waterForDate(today);
+  const [selectedDate, setSelectedDate] = useState(todayISO());
+  const totals = totalsForDate(selectedDate);
+  const meals = mealsForDate(selectedDate).slice(0, 4);
+  const water = waterForDate(selectedDate);
   const streak = streakDays();
+  const isToday = selectedDate === todayISO();
 
   if (!profile || !targets) return null;
 
@@ -33,18 +37,35 @@ export default function Home() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Today</Text>
+            <Text style={styles.greeting}>{formatDayLabel(selectedDate)}</Text>
             <Text style={styles.date}>
-              {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+              {new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+              })}
             </Text>
           </View>
-          {streak > 0 ? (
-            <View style={styles.streakBadge}>
-              <Ionicons name="flame" size={16} color={colors.orange} />
-              <Text style={styles.streakText}>{streak}d</Text>
-            </View>
-          ) : null}
+          <View style={styles.headerRight}>
+            {!isPro ? (
+              <Pressable style={styles.premiumPill} onPress={() => router.push('/paywall')}>
+                <Text style={styles.premiumPillText}>Try Premium</Text>
+              </Pressable>
+            ) : null}
+            {streak > 0 ? (
+              <View style={styles.streakBadge}>
+                <Ionicons name="flame" size={16} color={colors.orange} />
+                <Text style={styles.streakText}>{streak}d</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
+
+        <WeekStrip
+          selectedDateISO={selectedDate}
+          onSelect={setSelectedDate}
+          hasEntry={(iso) => mealsForDate(iso).length > 0}
+        />
 
         <Card style={styles.ringCard}>
           <Ring
@@ -83,18 +104,29 @@ export default function Home() {
             />
           </View>
           <View style={styles.waterButtons}>
-            <Pressable style={styles.waterBtn} onPress={() => addWater(-WATER_STEP_ML, today)}>
+            <Pressable style={styles.waterBtn} onPress={() => addWater(-WATER_STEP_ML, selectedDate)}>
               <Ionicons name="remove" size={18} color={colors.textPrimary} />
             </Pressable>
             <Text style={styles.waterStep}>{WATER_STEP_ML}ml glass</Text>
-            <Pressable style={[styles.waterBtn, styles.waterBtnAdd]} onPress={() => addWater(WATER_STEP_ML, today)}>
+            <Pressable
+              style={[styles.waterBtn, styles.waterBtnAdd]}
+              onPress={() => addWater(WATER_STEP_ML, selectedDate)}
+            >
               <Ionicons name="add" size={18} color="#0B0D12" />
             </Pressable>
           </View>
         </Card>
 
+        <View style={{ marginTop: spacing.md }}>
+          <WorkoutCard dateISO={selectedDate} />
+        </View>
+
+        <View style={{ marginTop: spacing.md }}>
+          <ReminderCard />
+        </View>
+
         <View style={styles.mealsHeader}>
-          <Text style={styles.sectionTitle}>Today's meals</Text>
+          <Text style={styles.sectionTitle}>{isToday ? "Today's meals" : `${formatDayLabel(selectedDate)}'s meals`}</Text>
           <Pressable onPress={() => router.push('/(tabs)/diary')}>
             <Text style={styles.viewAll}>View all</Text>
           </Pressable>
@@ -102,7 +134,9 @@ export default function Home() {
 
         {meals.length === 0 ? (
           <Card>
-            <Text style={styles.emptyText}>No meals logged yet. Tap + to add your first meal.</Text>
+            <Text style={styles.emptyText}>
+              {isToday ? 'No meals logged yet. Tap + to add your first meal.' : 'No meals logged this day.'}
+            </Text>
           </Card>
         ) : (
           meals.map((meal) => (
@@ -123,7 +157,10 @@ export default function Home() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <Pressable style={styles.fab} onPress={() => router.push('/add-meal')}>
+      <Pressable
+        style={styles.fab}
+        onPress={() => router.push({ pathname: '/add-meal', params: { date: selectedDate } })}
+      >
         <Ionicons name="add" size={30} color="#0B0D12" />
       </Pressable>
     </SafeAreaView>
@@ -150,6 +187,14 @@ const styles = StyleSheet.create({
   },
   greeting: { color: colors.textSecondary, fontSize: font.size.sm, fontWeight: '600' },
   date: { color: colors.textPrimary, fontSize: font.size.xl, fontWeight: '800' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  premiumPill: {
+    backgroundColor: colors.yellow,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  premiumPillText: { color: '#0B0D12', fontWeight: '800', fontSize: font.size.sm },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',

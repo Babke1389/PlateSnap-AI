@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -18,6 +19,8 @@ import { Card } from '../src/components/Card';
 import { Segmented } from '../src/components/Segmented';
 import { TextField } from '../src/components/TextField';
 import { analyzeMealPhoto, analyzeMealText, isAiConfigured, NoFoodDetectedError } from '../src/lib/ai';
+import { lookupBarcode, ProductNotFoundError } from '../src/lib/barcode';
+import { formatDayLabel, todayISO } from '../src/lib/calories';
 import { FREE_DAILY_PHOTO_SCANS } from '../src/lib/constants';
 import { useStore } from '../src/lib/store';
 import { MealAnalysis } from '../src/lib/types-ai';
@@ -25,10 +28,12 @@ import { colors, font, radius, spacing } from '../src/theme';
 
 const aiConfigured = isAiConfigured();
 
-type Mode = 'text' | 'photo' | 'manual';
+type Mode = 'text' | 'photo' | 'manual' | 'barcode';
 
 export default function AddMeal() {
   const router = useRouter();
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  const targetDate = typeof dateParam === 'string' ? dateParam : undefined;
   const { isPro, addMeal, favorites, photoScansToday, recordPhotoScan, addFavorite, logFavorite } =
     useStore();
   const [mode, setMode] = useState<Mode>('text');
@@ -46,6 +51,10 @@ export default function AddMeal() {
   const [manualCarbs, setManualCarbs] = useState('');
   const [manualFat, setManualFat] = useState('');
 
+  const [scanning, setScanning] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const hasScannedRef = useRef(false);
+
   const photoScansUsedToday = photoScansToday();
   const canUsePhotoFree = photoScansUsedToday < FREE_DAILY_PHOTO_SCANS;
   const canUsePhoto = isPro || canUsePhotoFree;
@@ -56,6 +65,7 @@ export default function AddMeal() {
     setPhotoUri(null);
     setErrorText(null);
     setSaveAsFavorite(false);
+    setScanning(false);
   };
 
   const onAnalyzeText = async () => {
@@ -109,11 +119,42 @@ export default function AddMeal() {
     }
   };
 
+  const startScanning = async () => {
+    if (!cameraPermission?.granted) {
+      const perm = await requestCameraPermission();
+      if (!perm.granted) return;
+    }
+    hasScannedRef.current = false;
+    setResult(null);
+    setErrorText(null);
+    setScanning(true);
+  };
+
+  const onBarcodeDetected = async (data: string) => {
+    if (hasScannedRef.current) return;
+    hasScannedRef.current = true;
+    setScanning(false);
+    setLoading(true);
+    try {
+      const analysis = await lookupBarcode(data);
+      setResult(analysis);
+    } catch (err) {
+      if (err instanceof ProductNotFoundError) {
+        setErrorText("Couldn't find that product — try Manual entry instead.");
+      } else {
+        setErrorText(err instanceof Error ? err.message : 'Something went wrong looking that up.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const onLog = () => {
     if (!result) return;
-    const finalDescription = mode === 'photo' ? result.items.join(', ') : description.trim();
+    const finalDescription =
+      mode === 'photo' || mode === 'barcode' ? result.items.join(', ') : description.trim();
     addMeal({
-      source: mode as 'text' | 'photo',
+      source: mode as 'text' | 'photo' | 'barcode',
       description: finalDescription,
       photoUri: photoUri ?? undefined,
       calories: result.calories,
@@ -121,6 +162,7 @@ export default function AddMeal() {
       carbsG: result.carbsG,
       fatG: result.fatG,
       items: result.items,
+      dateISO: targetDate,
     });
     if (isPro && saveAsFavorite) {
       addFavorite({
@@ -145,7 +187,7 @@ export default function AddMeal() {
       carbsG: Math.round(Number(manualCarbs)) || 0,
       fatG: Math.round(Number(manualFat)) || 0,
     };
-    addMeal({ source: 'manual', ...favorite });
+    addMeal({ source: 'manual', ...favorite, dateISO: targetDate });
     if (isPro && saveAsFavorite) {
       addFavorite(favorite);
     }
@@ -155,14 +197,19 @@ export default function AddMeal() {
   const onLogFavorite = (favId: string) => {
     const fav = favorites.find((f) => f.id === favId);
     if (!fav) return;
-    logFavorite(fav);
+    logFavorite(fav, targetDate);
     router.back();
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Add a meal</Text>
+        <View>
+          <Text style={styles.title}>Add a meal</Text>
+          {targetDate && targetDate !== todayISO() ? (
+            <Text style={styles.headerSubtitle}>Logging to {formatDayLabel(targetDate)}</Text>
+          ) : null}
+        </View>
         <Pressable onPress={() => router.back()} style={styles.closeBtn}>
           <Ionicons name="close" size={22} color={colors.textPrimary} />
         </Pressable>
@@ -174,6 +221,7 @@ export default function AddMeal() {
             options={[
               { label: 'Describe', value: 'text' },
               { label: 'Manual', value: 'manual' },
+              { label: 'Barcode', value: 'barcode' },
               { label: canUsePhoto ? 'Photo' : 'Photo (Pro)', value: 'photo' },
             ]}
             value={mode}
@@ -302,6 +350,41 @@ export default function AddMeal() {
                 ) : null}
                 <Button label="Log this meal" onPress={onLogManual} disabled={!canLogManual} />
               </>
+            ) : mode === 'barcode' ? (
+              <>
+                <Card style={styles.infoCard}>
+                  <Ionicons name="barcode-outline" size={18} color={colors.lime} />
+                  <Text style={styles.infoText}>
+                    Looks up the product against Open Food Facts, a free public nutrition
+                    database — free for everyone, no Pro needed.
+                  </Text>
+                </Card>
+                {scanning ? (
+                  <View style={styles.scannerBox}>
+                    <CameraView
+                      style={StyleSheet.absoluteFill}
+                      facing="back"
+                      barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
+                      onBarcodeScanned={(res) => onBarcodeDetected(res.data)}
+                    />
+                    <Pressable style={styles.scannerCancel} onPress={() => setScanning(false)}>
+                      <Ionicons name="close" size={20} color="#fff" />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable style={styles.barcodeBtn} onPress={startScanning}>
+                    <Ionicons name="barcode-outline" size={32} color={colors.textPrimary} />
+                    <Text style={styles.photoBtnLabel}>Scan a barcode</Text>
+                  </Pressable>
+                )}
+                {cameraPermission && !cameraPermission.granted && !cameraPermission.canAskAgain ? (
+                  <Text style={styles.freeScanNote}>
+                    Camera access is off for this app — enable it in your phone's Settings to scan
+                    barcodes.
+                  </Text>
+                ) : null}
+                {loading ? <Text style={styles.analyzing}>Looking up product...</Text> : null}
+              </>
             ) : !canUsePhoto ? (
               <Card style={styles.lockedCard}>
                 <Ionicons name="lock-closed" size={28} color={colors.orange} />
@@ -368,7 +451,9 @@ export default function AddMeal() {
           {result ? (
             <Card style={styles.resultCard}>
               <Text style={styles.resultTitle}>
-                {result.confidence === 'ai'
+                {result.confidence === 'barcode'
+                  ? 'From product label'
+                  : result.confidence === 'ai'
                   ? 'AI estimate'
                   : result.confidence === 'matched'
                   ? 'Estimate'
@@ -378,7 +463,9 @@ export default function AddMeal() {
               <Text style={styles.resultMacros}>
                 Protein {result.proteinG}g · Carbs {result.carbsG}g · Fat {result.fatG}g
               </Text>
-              {result.confidence === 'ai' ? (
+              {result.confidence === 'barcode' ? (
+                <Text style={styles.resultDisclaimer}>{result.items.join(', ')}</Text>
+              ) : result.confidence === 'ai' ? (
                 <Text style={styles.resultDisclaimer}>
                   Detected: {result.items.join(', ')} — AI estimate, may not be exact.
                 </Text>
@@ -424,6 +511,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   title: { color: colors.textPrimary, fontSize: font.size.lg, fontWeight: '800' },
+  headerSubtitle: { color: colors.textFaint, fontSize: font.size.xs, marginTop: 2 },
   closeBtn: {
     width: 34,
     height: 34,
@@ -510,6 +598,33 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   photoBtnLabel: { color: colors.textSecondary, fontWeight: '600', fontSize: font.size.sm },
+  barcodeBtn: {
+    aspectRatio: 16 / 10,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  scannerBox: {
+    aspectRatio: 16 / 10,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  scannerCancel: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   preview: { width: '100%', aspectRatio: 1, borderRadius: radius.lg },
   analyzing: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md },
   resultCard: { marginTop: spacing.lg, alignItems: 'center' },

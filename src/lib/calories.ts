@@ -88,6 +88,50 @@ export function ftInToCm(ft: number, inch: number): number {
   return (ft * 12 + inch) * 2.54;
 }
 
+/**
+ * Formats a Date as a YYYY-MM-DD string using its LOCAL calendar date —
+ * never use `.toISOString().slice(0, 10)` for this, since that converts to
+ * UTC first and silently shifts the date back a day for any timezone ahead
+ * of UTC (i.e. most of Europe, Asia, Australia).
+ */
+export function toLocalISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalISODate(new Date());
+}
+
+export function addDaysISO(dateISO: string, delta: number): string {
+  const d = new Date(dateISO + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  return toLocalISODate(d);
+}
+
+export function formatDayLabel(dateISO: string): string {
+  const today = todayISO();
+  if (dateISO === today) return 'Today';
+  if (dateISO === addDaysISO(today, -1)) return 'Yesterday';
+  return new Date(dateISO + 'T00:00:00').toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+/** Monday-first list of the 7 ISO dates in the week containing `dateISO`. */
+export function weekDatesISO(dateISO: string): string[] {
+  const ref = new Date(dateISO + 'T00:00:00');
+  const day = ref.getDay(); // 0 = Sun ... 6 = Sat
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = new Date(ref);
+  monday.setDate(ref.getDate() + mondayOffset);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return toLocalISODate(d);
+  });
 }
