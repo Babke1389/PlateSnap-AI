@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BodyMeasurementsCard } from '../../src/components/BodyMeasurementsCard';
 import { Card } from '../../src/components/Card';
+import { HeartRateCard } from '../../src/components/HeartRateCard';
 import { MacroBar } from '../../src/components/MacroBar';
 import { ReminderCard } from '../../src/components/ReminderCard';
 import { Ring } from '../../src/components/Ring';
@@ -120,6 +121,10 @@ export default function Home() {
 
         <View style={{ marginTop: spacing.md }}>
           <WorkoutCard dateISO={selectedDate} />
+        </View>
+
+        <View style={{ marginTop: spacing.md }}>
+          <HeartRateCard />
         </View>
 
         <View style={{ marginTop: spacing.md }}>

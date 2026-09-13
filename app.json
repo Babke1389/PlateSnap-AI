@@ -18,6 +18,7 @@
     },
     "android": {
       "package": "com.platesnapai.app",
+      "permissions": ["android.permission.health.READ_HEART_RATE"],
       "adaptiveIcon": {
         "backgroundColor": "#113552",
         "foregroundImage": "./assets/android-icon-foreground.png"
@@ -41,7 +42,9 @@
         {
           "cameraPermission": "Platesnap AI uses your camera to scan a product's barcode and look up its nutrition."
         }
-      ]
+      ],
+      "react-native-health-connect",
+      "./plugins/withHealthConnectQueries.js"
     ]
   }
 }
