@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../src/components/Button';
 import { colors, font, spacing } from '../../src/theme';
@@ -12,7 +12,7 @@ export default function Welcome() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.content}>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>🔥</Text>
+          <Image source={require('../../assets/icon.png')} style={styles.badgeImage} resizeMode="cover" />
         </View>
         <Text style={styles.title}>Platesnap AI</Text>
         <Text style={styles.subtitle}>
@@ -49,9 +49,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
+    overflow: 'hidden',
   },
-  badgeText: {
-    fontSize: 44,
+  badgeImage: {
+    width: '100%',
+    height: '100%',
   },
   title: {
     color: colors.textPrimary,

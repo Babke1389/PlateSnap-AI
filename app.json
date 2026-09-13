@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "scheme": "platesnapai",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0B0D12",
+    "backgroundColor": "#113552",
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -19,7 +19,7 @@
     "android": {
       "package": "com.platesnapai.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0B0D12",
+        "backgroundColor": "#113552",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
