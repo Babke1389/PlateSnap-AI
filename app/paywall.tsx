@@ -33,6 +33,11 @@ const FEATURES = [
     label: 'Calorie trends',
     desc: 'See your daily calories over the last two weeks against your goal, at a glance.',
   },
+  {
+    icon: 'body',
+    label: 'Body measurements',
+    desc: 'Track waist, chest, hips, arms and thighs over time, with a trend line for each.',
+  },
 ] as const;
 
 export default function Paywall() {

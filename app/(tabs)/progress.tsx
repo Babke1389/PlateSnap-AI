@@ -4,6 +4,7 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BeforeAfterPhotos } from '../../src/components/BeforeAfterPhotos';
+import { BodyMeasurementsCard } from '../../src/components/BodyMeasurementsCard';
 import { Button } from '../../src/components/Button';
 import { CalorieTrendChart } from '../../src/components/CalorieTrendChart';
 import { Card } from '../../src/components/Card';
@@ -85,6 +86,10 @@ export default function Progress() {
               <Button label="Unlock Pro" onPress={() => router.push('/paywall')} />
             </Card>
           )}
+        </View>
+
+        <View style={{ marginTop: spacing.md }}>
+          <BodyMeasurementsCard />
         </View>
 
         <View style={{ marginTop: spacing.md }}>

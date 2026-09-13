@@ -91,6 +91,18 @@ export interface Reminder {
   notificationId: string | null;
 }
 
+export type MeasurementType = 'waist' | 'chest' | 'hips' | 'arms' | 'thighs';
+
+export interface BodyMeasurement {
+  id: string;
+  dateISO: string;
+  waistCm?: number;
+  chestCm?: number;
+  hipsCm?: number;
+  armsCm?: number;
+  thighsCm?: number;
+}
+
 export interface AppState {
   profile: Profile | null;
   targets: Targets | null;
@@ -103,6 +115,7 @@ export interface AppState {
   photoScanDates: string[];
   beforePhoto: ProgressPhoto | null;
   afterPhoto: ProgressPhoto | null;
+  bodyMeasurements: BodyMeasurement[];
   isPro: boolean;
   trialEndsAt: string | null;
   onboardingComplete: boolean;

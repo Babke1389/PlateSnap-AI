@@ -3,6 +3,7 @@ import { calcTargets, toLocalISODate, todayISO } from './calories';
 import { loadState, saveState } from './storage';
 import {
   AppState,
+  BodyMeasurement,
   FavoriteMeal,
   Meal,
   Profile,
@@ -26,6 +27,7 @@ const EMPTY_STATE: AppState = {
   photoScanDates: [],
   beforePhoto: null,
   afterPhoto: null,
+  bodyMeasurements: [],
   isPro: false,
   trialEndsAt: null,
   onboardingComplete: false,
@@ -65,6 +67,8 @@ interface Store extends AppState {
   addReminder: (reminder: Omit<Reminder, 'id'>) => Reminder;
   removeReminder: (id: string) => void;
   updateReminder: (id: string, patch: Partial<Reminder>) => void;
+  addBodyMeasurement: (entry: Omit<BodyMeasurement, 'id' | 'dateISO'> & { dateISO?: string }) => void;
+  removeBodyMeasurement: (id: string) => void;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -257,6 +261,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       reminders: s.reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)),
     }));
 
+  const addBodyMeasurement: Store['addBodyMeasurement'] = ({ dateISO = todayISO(), ...fields }) => {
+    setState((s) => {
+      const existing = s.bodyMeasurements.find((m) => m.dateISO === dateISO);
+      if (existing) {
+        const merged: BodyMeasurement = { ...existing, ...fields };
+        return {
+          ...s,
+          bodyMeasurements: s.bodyMeasurements.map((m) => (m.id === existing.id ? merged : m)),
+        };
+      }
+      const entry: BodyMeasurement = { id: uid(), dateISO, ...fields };
+      const bodyMeasurements = [...s.bodyMeasurements, entry].sort((a, b) =>
+        a.dateISO.localeCompare(b.dateISO)
+      );
+      return { ...s, bodyMeasurements };
+    });
+  };
+
+  const removeBodyMeasurement = (id: string) =>
+    setState((s) => ({ ...s, bodyMeasurements: s.bodyMeasurements.filter((m) => m.id !== id) }));
+
   const value = useMemo<Store>(
     () => ({
       ...state,
@@ -287,6 +312,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addReminder,
       removeReminder,
       updateReminder,
+      addBodyMeasurement,
+      removeBodyMeasurement,
     }),
     [state, isLoading]
   );
