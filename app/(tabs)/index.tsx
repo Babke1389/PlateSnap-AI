@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BodyMeasurementsCard } from '../../src/components/BodyMeasurementsCard';
 import { Card } from '../../src/components/Card';
 import { MacroBar } from '../../src/components/MacroBar';
 import { ReminderCard } from '../../src/components/ReminderCard';
@@ -119,6 +120,10 @@ export default function Home() {
 
         <View style={{ marginTop: spacing.md }}>
           <WorkoutCard dateISO={selectedDate} />
+        </View>
+
+        <View style={{ marginTop: spacing.md }}>
+          <BodyMeasurementsCard />
         </View>
 
         <View style={{ marginTop: spacing.md }}>
