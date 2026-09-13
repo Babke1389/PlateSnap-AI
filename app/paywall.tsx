@@ -28,6 +28,11 @@ const FEATURES = [
     label: 'Before & After photos',
     desc: 'Save a photo at the start and another at your goal, side by side.',
   },
+  {
+    icon: 'stats-chart',
+    label: 'Calorie trends',
+    desc: 'See your daily calories over the last two weeks against your goal, at a glance.',
+  },
 ] as const;
 
 export default function Paywall() {

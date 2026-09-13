@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BeforeAfterPhotos } from '../../src/components/BeforeAfterPhotos';
 import { Button } from '../../src/components/Button';
+import { CalorieTrendChart } from '../../src/components/CalorieTrendChart';
 import { Card } from '../../src/components/Card';
 import { WeightChart } from '../../src/components/WeightChart';
 import { useStore } from '../../src/lib/store';
@@ -12,7 +13,7 @@ import { colors, font, spacing } from '../../src/theme';
 
 export default function Progress() {
   const router = useRouter();
-  const { profile, weightLog, streakDays } = useStore();
+  const { profile, targets, isPro, weightLog, totalsForDate, streakDays } = useStore();
 
   if (!profile) return null;
 
@@ -67,6 +68,26 @@ export default function Progress() {
         </Card>
 
         <View style={{ marginTop: spacing.md }}>
+          {isPro && targets ? (
+            <Card style={{ alignItems: 'center' }}>
+              <View style={styles.chartHeader}>
+                <Text style={styles.sectionTitle}>Calorie trend (14 days)</Text>
+              </View>
+              <CalorieTrendChart totalsForDate={totalsForDate} goalCalories={targets.calorieTarget} />
+            </Card>
+          ) : (
+            <Card style={styles.lockedCard}>
+              <Ionicons name="stats-chart" size={28} color={colors.orange} />
+              <Text style={styles.lockedTitle}>Calorie trends are a Pro feature</Text>
+              <Text style={styles.lockedSub}>
+                See your daily calories over the last two weeks against your goal, at a glance.
+              </Text>
+              <Button label="Unlock Pro" onPress={() => router.push('/paywall')} />
+            </Card>
+          )}
+        </View>
+
+        <View style={{ marginTop: spacing.md }}>
           <BeforeAfterPhotos />
         </View>
       </ScrollView>
@@ -86,4 +107,12 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.textPrimary, fontWeight: '700', marginBottom: spacing.sm },
   streakValue: { color: colors.textPrimary, fontWeight: '800', fontSize: font.size.md },
   streakSub: { color: colors.textFaint, fontSize: font.size.xs, marginTop: 2, maxWidth: 240 },
+  lockedCard: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
+  lockedTitle: { color: colors.textPrimary, fontWeight: '800', fontSize: font.size.md, textAlign: 'center' },
+  lockedSub: {
+    color: colors.textFaint,
+    fontSize: font.size.sm,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
 });

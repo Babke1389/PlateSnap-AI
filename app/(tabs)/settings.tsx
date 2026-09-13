@@ -93,10 +93,10 @@ export default function Settings() {
             </Text>
             <Text style={styles.proSub}>
               {trialActive
-                ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your trial — unlimited photo scans, favorites, data export, and Before & After are unlocked.`
+                ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your trial — unlimited photo scans, favorites, data export, Before & After, and calorie trends are unlocked.`
                 : isPro
-                ? 'Unlimited photo scans, favorites, data export, and Before & After are unlocked.'
-                : 'Unlock unlimited photo scans, saved favorites, data export, and Before & After photos.'}
+                ? 'Unlimited photo scans, favorites, data export, Before & After, and calorie trends are unlocked.'
+                : 'Unlock unlimited photo scans, saved favorites, data export, Before & After photos, and calorie trends.'}
             </Text>
           </View>
           {isPro ? (
