@@ -31,6 +31,14 @@
     "plugins": [
       "expo-router",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Platesnap AI needs access to your photos so you can pick a picture of your meal to scan.",
