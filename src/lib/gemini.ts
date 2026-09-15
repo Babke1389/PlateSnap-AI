@@ -7,7 +7,7 @@ import { MealAnalysis } from './types-ai';
  * while text descriptions keep using Groq (see groq.ts / ai.ts).
  */
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-3.6-flash';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const REQUEST_TIMEOUT_MS = 45000;
 
