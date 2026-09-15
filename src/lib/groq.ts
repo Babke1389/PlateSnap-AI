@@ -1,6 +1,6 @@
 import { MealAnalysis } from './types-ai';
 
-const GROQ_MODEL = 'qwen/qwen3.6-27b';
+const GROQ_MODEL = 'qwen/qwen3.8-27b';
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 const REQUEST_TIMEOUT_MS = 45000;
 
@@ -104,11 +104,4 @@ async function callGroq(userContent: GroqContentPart[]): Promise<MealAnalysis> {
 
 export async function analyzeTextWithGroq(description: string): Promise<MealAnalysis> {
   return callGroq([{ type: 'text', text: `Meal description: "${description}"` }]);
-}
-
-export async function analyzePhotoWithGroq(base64: string, mimeType: string): Promise<MealAnalysis> {
-  return callGroq([
-    { type: 'text', text: 'Here is a photo. Identify whether it shows food, and if so, estimate its nutrition.' },
-    { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}` } },
-  ]);
 }

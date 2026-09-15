@@ -18,7 +18,13 @@ import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
 import { Segmented } from '../src/components/Segmented';
 import { TextField } from '../src/components/TextField';
-import { analyzeMealPhoto, analyzeMealText, isAiConfigured, NoFoodDetectedError } from '../src/lib/ai';
+import {
+  analyzeMealPhoto,
+  analyzeMealText,
+  isPhotoAiConfigured,
+  isTextAiConfigured,
+  NoFoodDetectedError,
+} from '../src/lib/ai';
 import { BarcodeProduct, lookupBarcode, ProductNotFoundError } from '../src/lib/barcode';
 import { formatDayLabel, todayISO } from '../src/lib/calories';
 import { FREE_DAILY_PHOTO_SCANS } from '../src/lib/constants';
@@ -26,7 +32,8 @@ import { useStore } from '../src/lib/store';
 import { MealAnalysis } from '../src/lib/types-ai';
 import { colors, font, radius, spacing } from '../src/theme';
 
-const aiConfigured = isAiConfigured();
+const textAiConfigured = isTextAiConfigured();
+const photoAiConfigured = isPhotoAiConfigured();
 
 type Mode = 'text' | 'photo' | 'manual' | 'barcode';
 
@@ -162,8 +169,8 @@ export default function AddMeal() {
     if (!perm.granted) return;
 
     const picked = fromCamera
-      ? await ImagePicker.launchCameraAsync({ quality: 0.6, allowsEditing: true, base64: aiConfigured })
-      : await ImagePicker.launchImageLibraryAsync({ quality: 0.6, allowsEditing: true, base64: aiConfigured });
+      ? await ImagePicker.launchCameraAsync({ quality: 0.6, allowsEditing: true, base64: photoAiConfigured })
+      : await ImagePicker.launchImageLibraryAsync({ quality: 0.6, allowsEditing: true, base64: photoAiConfigured });
 
     if (picked.canceled || !picked.assets?.[0]) return;
     const asset = picked.assets[0];
@@ -288,7 +295,7 @@ export default function AddMeal() {
                   }}
                 />
                 <Text style={styles.hint}>
-                  {aiConfigured
+                  {textAiConfigured
                     ? 'Analyzed by AI for a real estimate — still approximate, not gram-exact.'
                     : 'Matches common foods from a lookup table for a rough estimate — not a real nutrition database. For exact numbers, use "Manual" instead.'}
                 </Text>
@@ -481,7 +488,7 @@ export default function AddMeal() {
               </Card>
             ) : (
               <>
-                {aiConfigured ? (
+                {photoAiConfigured ? (
                   <Card style={styles.infoCard}>
                     <Ionicons name="sparkles" size={18} color={colors.lime} />
                     <Text style={styles.infoText}>

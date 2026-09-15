@@ -1,22 +1,25 @@
 /**
  * Meal analysis.
  *
- * If EXPO_PUBLIC_GROQ_API_KEY is set (see .env and groq.ts), both functions
- * call a real vision/language model on Groq — it can actually see photo
- * contents, detect when there's no food, and give a real estimate.
+ * Text descriptions (EXPO_PUBLIC_GROQ_API_KEY set, see groq.ts) go to Groq
+ * for a real language-model estimate. Photos (EXPO_PUBLIC_GEMINI_API_KEY
+ * set, see gemini.ts) go to Google Gemini instead — Groq's current model
+ * lineup has no vision-capable model, so it can't be used for photos.
  *
- * Without a key configured, this falls back to local-only heuristics:
- * `analyzeMealText` matches words against a small hand-written food lookup
- * table (see food-db.ts) for a plausible ballpark; `analyzeMealPhoto` can't
- * see the image at all and returns a generic placeholder guess. See
- * add-meal.tsx for how the UI distinguishes these cases (isAiConfigured()).
+ * Without the relevant key configured, this falls back to local-only
+ * heuristics: `analyzeMealText` matches words against a small hand-written
+ * food lookup table (see food-db.ts) for a plausible ballpark;
+ * `analyzeMealPhoto` can't see the image at all and returns a generic
+ * placeholder guess. See add-meal.tsx for how the UI distinguishes these
+ * cases (isTextAiConfigured() / isPhotoAiConfigured()).
  */
 
-import { analyzePhotoWithGroq, analyzeTextWithGroq, isAiConfigured, NoFoodDetectedError } from './groq';
+import { analyzeTextWithGroq, isAiConfigured as isTextAiConfigured, NoFoodDetectedError } from './groq';
+import { analyzePhotoWithGemini, isGeminiConfigured as isPhotoAiConfigured } from './gemini';
 import { matchFoods } from './food-db';
 import { MealAnalysis } from './types-ai';
 
-export { isAiConfigured, NoFoodDetectedError };
+export { isTextAiConfigured, isPhotoAiConfigured, NoFoodDetectedError };
 
 const STUB_DELAY_MS = 900;
 
@@ -75,7 +78,7 @@ function localTextEstimate(description: string): MealAnalysis {
 export async function analyzeMealText(description: string): Promise<MealAnalysis> {
   const trimmed = description.trim();
 
-  if (isAiConfigured()) {
+  if (isTextAiConfigured()) {
     return analyzeTextWithGroq(trimmed);
   }
 
@@ -84,11 +87,11 @@ export async function analyzeMealText(description: string): Promise<MealAnalysis
 }
 
 export async function analyzeMealPhoto(photo: { uri: string; base64?: string; mimeType?: string }): Promise<MealAnalysis> {
-  if (isAiConfigured()) {
+  if (isPhotoAiConfigured()) {
     if (!photo.base64) {
       throw new Error('No image data captured for this photo — try picking it again.');
     }
-    return analyzePhotoWithGroq(photo.base64, photo.mimeType ?? 'image/jpeg');
+    return analyzePhotoWithGemini(photo.base64, photo.mimeType ?? 'image/jpeg');
   }
 
   await new Promise((r) => setTimeout(r, STUB_DELAY_MS + 500));
