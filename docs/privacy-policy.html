@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Platesnap AI — Privacy Policy</title>
+<meta name="description" content="How Platesnap AI handles camera, health, and meal data — required for its Google Play listing.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#F6F7F5;
+    --surface:#FFFFFF;
+    --surface-alt:#EFF2EB;
+    --border:#DDE3D6;
+    --text:#161A14;
+    --text-dim:#5B6455;
+    --text-faint:#8A927F;
+    --accent:#5E7E1E;
+    --accent-strong:#3F5714;
+    --accent-soft:#E6EFD6;
+    --danger:#B5432F;
+    --font-display:'Sora',system-ui,sans-serif;
+    --font-body:'Source Serif 4',Georgia,'Times New Roman',serif;
+    --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0B0D12;
+      --surface:#141821;
+      --surface-alt:#1B2029;
+      --border:#272D3A;
+      --text:#F2F4EE;
+      --text-dim:#A7AF9E;
+      --text-faint:#6E7666;
+      --accent:#C6FF3D;
+      --accent-strong:#E8FFA8;
+      --accent-soft:rgba(198,255,61,0.12);
+      --danger:#FF6B54;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    padding-inline:20px;
+    padding-block:48px;
+    line-height:1.65;
+  }
+  img{max-width:100%;}
+  a{color:var(--accent-strong);}
+  @media (prefers-color-scheme: dark){ a{color:var(--accent);} }
+
+  .wrap{
+    max-width:1040px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:220px minmax(0,680px);
+    gap:56px;
+    align-items:start;
+  }
+  @media (max-width:860px){
+    .wrap{grid-template-columns:1fr;}
+    .toc{display:none;}
+  }
+
+  header.masthead{
+    grid-column:1 / -1;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    border-bottom:2px solid var(--text);
+    padding-bottom:20px;
+    margin-bottom:8px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .mark{
+    width:40px;height:40px;border-radius:11px;
+    background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+    flex:none;
+  }
+  .brand-text h1{
+    font-family:var(--font-display);
+    font-size:1.15rem;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .brand-text p{
+    margin:2px 0 0;
+    font-family:var(--font-mono);
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--text-faint);
+  }
+  .meta{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--text-dim);
+    text-align:right;
+    line-height:1.6;
+  }
+  .meta strong{color:var(--text);}
+
+  .toc{
+    position:sticky;
+    top:24px;
+    font-family:var(--font-mono);
+    font-size:0.75rem;
+  }
+  .toc-label{
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--text-faint);
+    margin-bottom:14px;
+    font-size:0.68rem;
+  }
+  .toc ol{list-style:none;margin:0;padding:0;counter-reset:toc;}
+  .toc li{counter-increment:toc;margin-bottom:10px;}
+  .toc a{
+    color:var(--text-dim);
+    text-decoration:none;
+    display:flex;
+    gap:8px;
+  }
+  .toc a:hover{color:var(--accent-strong);}
+  @media (prefers-color-scheme: dark){ .toc a:hover{color:var(--accent);} }
+  .toc a::before{
+    content:counter(toc, decimal-leading-zero);
+    color:var(--text-faint);
+  }
+
+  main{min-width:0;}
+  .lede{
+    font-size:1.05rem;
+    color:var(--text-dim);
+    max-width:60ch;
+    margin:18px 0 40px;
+  }
+
+  .callout{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-left:3px solid var(--accent);
+    border-radius:6px;
+    padding:16px 18px;
+    font-family:var(--font-display);
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--text);
+    margin-bottom:44px;
+  }
+  .callout span{
+    display:block;
+    font-family:var(--font-body);
+    font-weight:400;
+    font-size:0.95rem;
+    color:var(--text-dim);
+    margin-top:6px;
+  }
+
+  section{
+    border-top:1px solid var(--border);
+    padding-block:32px;
+  }
+  section:first-of-type{border-top:none;padding-top:0;}
+
+  .section-num{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--accent-strong);
+    letter-spacing:0.08em;
+  }
+  @media (prefers-color-scheme: dark){ .section-num{color:var(--accent);} }
+
+  h2{
+    font-family:var(--font-display);
+    font-size:1.3rem;
+    font-weight:700;
+    margin:6px 0 16px;
+    text-wrap:balance;
+    letter-spacing:-0.01em;
+  }
+  p{margin:0 0 14px;max-width:65ch;}
+  ul{margin:0 0 14px;padding-left:1.2em;max-width:65ch;}
+  li{margin-bottom:6px;}
+  strong{color:var(--text);font-weight:600;}
+
+  .flow-table{
+    width:100%;
+    border-collapse:collapse;
+    margin:18px 0 22px;
+    font-size:0.88rem;
+  }
+  .flow-table th,.flow-table td{
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  .flow-table th{
+    font-family:var(--font-display);
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--text-faint);
+    font-weight:700;
+  }
+  .flow-table td.dest{
+    font-family:var(--font-mono);
+    font-size:0.8rem;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  @media (prefers-color-scheme: dark){ .flow-table td.dest{color:var(--accent);} }
+  .table-wrap{overflow-x:auto;}
+
+  .perm{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    background:var(--surface-alt);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:2px 8px;
+    color:var(--text);
+  }
+
+  .badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .badge{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    padding:4px 10px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+  }
+  .badge.no{color:var(--danger);border-color:var(--danger);}
+  .badge.no::before{content:"✕ ";}
+  .badge.yes{color:var(--accent-strong);border-color:var(--accent-strong);}
+  @media (prefers-color-scheme: dark){ .badge.yes{color:var(--accent);border-color:var(--accent);} }
+  .badge.yes::before{content:"✓ ";}
+
+  footer{
+    grid-column:1 / -1;
+    border-top:1px solid var(--border);
+    margin-top:24px;
+    padding-top:24px;
+    font-family:var(--font-mono);
+    font-size:0.75rem;
+    color:var(--text-faint);
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    gap:12px;
+  }
+  footer a{color:var(--text-dim);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="brand">
+      <div class="mark">🍽️</div>
+      <div class="brand-text">
+        <h1>Platesnap AI</h1>
+        <p>Privacy Policy</p>
+      </div>
+    </div>
+    <div class="meta">
+      Effective <strong>September 18, 2026</strong><br>
+      Version <strong>1.1</strong> · v1.0.0 of the app
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-label">On this page</div>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#camera">Camera &amp; photos</a></li>
+      <li><a href="#ai">AI meal analysis</a></li>
+      <li><a href="#barcode">Barcode lookups</a></li>
+      <li><a href="#health">Health Connect &amp; heart rate</a></li>
+      <li><a href="#storage">Where your data lives</a></li>
+      <li><a href="#sharing">Sharing &amp; selling</a></li>
+      <li><a href="#permissions">Permissions requested</a></li>
+      <li><a href="#rights">Your choices</a></li>
+      <li><a href="#children">Children</a></li>
+      <li><a href="#changes">Changes</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <p class="lede">Platesnap AI is a calorie and macro tracker that scans meal photos, barcodes, and — if you connect one — your smartwatch's heart rate. This page explains, plainly, what leaves your phone and what never does.</p>
+
+    <div class="callout">
+      The short version
+      <span>Platesnap AI has no user accounts and no server of its own. Your meal log, weight, workouts, and reminders stay on your device. Only three things ever leave it — a meal description or photo to an AI provider (only if you use text/photo scanning), a barcode number to a public food database, and nothing at all for heart rate, which is read locally from Health Connect and never transmitted anywhere.</span>
+    </div>
+
+    <section id="overview">
+      <span class="section-num">01</span>
+      <h2>Overview</h2>
+      <p>Platesnap AI ("the app," "we," "our") is developed as a personal nutrition and fitness tracker. We do not require you to create an account, we do not run analytics or advertising SDKs, and we do not operate a backend server that stores your data. Everything you log — meals, weight, workouts, reminders, body measurements, favorites, before/after photos — is written to your device's local storage using Android's on-device storage APIs.</p>
+      <p>The sections below cover the few features that do talk to the network, and exactly what they send.</p>
+    </section>
+
+    <section id="camera">
+      <span class="section-num">02</span>
+      <h2>Camera &amp; photos</h2>
+      <p>The app asks for camera and photo library access to let you:</p>
+      <ul>
+        <li>Take or choose a photo of a meal, so it can be analyzed and logged.</li>
+        <li>Take or choose a "before" and "after" progress photo (a Pro feature).</li>
+      </ul>
+      <p>Photos you capture are stored locally on your device. A meal photo is additionally sent to our AI provider for analysis — see the next section — but only at the moment you tap "Analyze," never in the background.</p>
+    </section>
+
+    <section id="ai">
+      <span class="section-num">03</span>
+      <h2>AI meal analysis</h2>
+      <p>When you describe a meal in text or submit a meal photo, the app estimates calories and macros using two different AI providers, depending on the input type:</p>
+      <div class="table-wrap">
+        <table class="flow-table">
+          <thead>
+            <tr><th>What you send</th><th>Sent to</th><th>Why</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A text description of your meal</td>
+              <td class="dest">Groq (AI inference)</td>
+              <td>To identify the food and estimate calories/macros</td>
+            </tr>
+            <tr>
+              <td>A photo of your plate</td>
+              <td class="dest">Google Gemini (AI inference)</td>
+              <td>To identify the food and estimate calories/macros from the image</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>If no AI provider is configured in your build, meal text is instead matched against a small food-lookup table stored inside the app itself, and nothing is sent anywhere for a photo — the app cannot see what's in it and returns a generic placeholder estimate. Either way, meal analysis is never linked to a name, email, or account — there isn't one.</p>
+    </section>
+
+    <section id="barcode">
+      <span class="section-num">04</span>
+      <h2>Barcode lookups</h2>
+      <p>Scanning a packaged food's barcode sends that barcode number to <strong>Open Food Facts</strong>, a free, open, publicly-run food database, to retrieve the product's nutrition facts. No other information about you or your device is included in that request.</p>
+    </section>
+
+    <section id="health">
+      <span class="section-num">05</span>
+      <h2>Health Connect &amp; heart rate</h2>
+      <div class="badge-row">
+        <span class="badge yes">Read-only</span>
+        <span class="badge yes">Stays on-device</span>
+        <span class="badge no">Never transmitted</span>
+        <span class="badge no">Never stored by us</span>
+      </div>
+      <p>If you choose to connect a smartwatch (Wear OS, Galaxy Watch, Mi Band, and similar), Platesnap AI reads your recent heart rate <strong>from Android's Health Connect store</strong> — the same shared, on-device store those watches already sync into through their own companion apps. The app does not pair with your watch directly over Bluetooth.</p>
+      <p>This heart rate data is read only to display it to you in the app. It is not written anywhere, not sent to any AI provider, not sent to us, and not persisted by the app beyond what's needed to show the current reading. You can revoke this access at any time from Android's Health Connect app, under Apps &gt; Platesnap AI.</p>
+    </section>
+
+    <section id="storage">
+      <span class="section-num">06</span>
+      <h2>Where your data lives</h2>
+      <p>Your profile, calorie/macro targets, meal log, weight history, workouts, reminders, body measurements, favorite meals, and progress photos are all stored locally on your device, using standard on-device storage. None of it is synced to a cloud account, because the app doesn't have one.</p>
+      <p>Practically, this means:</p>
+      <ul>
+        <li>Uninstalling the app deletes this data with it.</li>
+        <li><strong>Settings → Reset all data</strong> deletes it immediately, on-device, without contacting us.</li>
+        <li>We have no way to see, export, or recover your data — we simply don't have a copy of it.</li>
+      </ul>
+    </section>
+
+    <section id="sharing">
+      <span class="section-num">07</span>
+      <h2>Sharing &amp; selling</h2>
+      <p>We do not sell your data. We do not share it with advertisers. We do not run advertising or analytics SDKs of any kind. The only data that ever leaves your device is described in sections 3 and 4 above, and only when you actively use those features.</p>
+    </section>
+
+    <section id="permissions">
+      <span class="section-num">08</span>
+      <h2>Permissions requested</h2>
+      <div class="table-wrap">
+        <table class="flow-table">
+          <thead>
+            <tr><th>Permission</th><th>Used for</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="perm">CAMERA</span></td><td>Photographing meals and progress photos</td></tr>
+            <tr><td><span class="perm">READ/WRITE_EXTERNAL_STORAGE</span></td><td>Choosing an existing photo from your library</td></tr>
+            <tr><td><span class="perm">android.permission.health.READ_HEART_RATE</span></td><td>Reading heart rate from Health Connect, only after you tap Connect</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="rights">
+      <span class="section-num">09</span>
+      <h2>Your choices</h2>
+      <p>Because there's no account or server-side copy of your data, control lives entirely on your device:</p>
+      <ul>
+        <li><strong>Delete everything:</strong> Settings → Reset all data, or uninstall the app.</li>
+        <li><strong>Revoke camera/photo access:</strong> your device's system Settings → Apps → Platesnap AI → Permissions.</li>
+        <li><strong>Revoke heart rate access:</strong> the Health Connect app → Apps and permissions → Platesnap AI.</li>
+        <li><strong>Stop AI analysis:</strong> use "Manual" entry instead of "Describe" or "Photo" if you'd rather nothing be sent to Groq or Gemini.</li>
+      </ul>
+    </section>
+
+    <section id="children">
+      <span class="section-num">10</span>
+      <h2>Children</h2>
+      <p>Platesnap AI is not directed at children under 13, and we do not knowingly collect data from them. Since the app has no accounts and no server, there is no user database in which such data could be retained in the first place.</p>
+    </section>
+
+    <section id="changes">
+      <span class="section-num">11</span>
+      <h2>Changes to this policy</h2>
+      <p>If this policy changes, the "Effective" date at the top of this page will update, and the change will describe what's different. We won't expand what leaves your device without updating this page first.</p>
+    </section>
+
+    <section id="contact">
+      <span class="section-num">12</span>
+      <h2>Contact</h2>
+      <p>Questions about this policy or how Platesnap AI handles data: <a href="mailto:support@platesnapai.app">support@platesnapai.app</a>.</p>
+    </section>
+  </main>
+
+  <footer>
+    <span>Platesnap AI — a personal nutrition &amp; fitness tracker.</span>
+    <span>This page is the privacy policy referenced in the app's Google Play listing.</span>
+  </footer>
+</div>
+</body>
+</html>
