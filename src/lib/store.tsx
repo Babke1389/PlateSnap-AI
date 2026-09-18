@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { calcTargets, toLocalISODate, todayISO } from './calories';
+import { addProStatusListener, getProStatus, isPurchasesConfigured } from './purchases';
 import { loadState, saveState } from './storage';
 import {
   AppState,
@@ -91,6 +92,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (!hydrated.current) return;
     saveState(state);
   }, [state]);
+
+  useEffect(() => {
+    if (!isPurchasesConfigured()) return;
+    // Real subscription state (RevenueCat) overrides the local demo Pro flag
+    // once configured — it's the source of truth for isPro/trialEndsAt then.
+    getProStatus()
+      .then(({ isPro, trialEndsAt }) => setState((s) => ({ ...s, isPro, trialEndsAt })))
+      .catch(() => {});
+    addProStatusListener(({ isPro, trialEndsAt }) =>
+      setState((s) => ({ ...s, isPro, trialEndsAt }))
+    );
+  }, []);
 
   const completeOnboarding = (profile: Profile) => {
     const targets = calcTargets(profile);
