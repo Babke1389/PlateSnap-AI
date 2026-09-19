@@ -10,6 +10,12 @@ import { MealAnalysis } from './types-ai';
 const GEMINI_MODEL = 'gemini-3.6-flash';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const REQUEST_TIMEOUT_MS = 45000;
+const RETRYABLE_STATUS = new Set([429, 503]);
+const RETRY_DELAYS_MS = [1000, 2500];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export function isGeminiConfigured(): boolean {
   return !!process.env.EXPO_PUBLIC_GEMINI_API_KEY;
@@ -34,45 +40,60 @@ export async function analyzePhotoWithGemini(base64: string, mimeType: string): 
     throw new Error('No Gemini API key configured');
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const attempts = RETRY_DELAYS_MS.length + 1;
+  let response: Response | null = null;
 
-  let response: Response;
-  try {
-    response = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: `${SYSTEM_PROMPT}\n\nHere is the photo.` },
-              { inline_data: { mime_type: mimeType, data: base64 } },
-            ],
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    try {
+      response = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: `${SYSTEM_PROMPT}\n\nHere is the photo.` },
+                { inline_data: { mime_type: mimeType, data: base64 } },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: 'application/json',
           },
-        ],
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: 'application/json',
-        },
-      }),
-      signal: controller.signal,
-    });
-  } catch (err: any) {
-    if (err?.name === 'AbortError') {
-      throw new Error('Gemini request timed out. Check your connection and try again.');
+        }),
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        throw new Error('Gemini request timed out. Check your connection and try again.');
+      }
+      throw new Error(`Could not reach Gemini: ${err?.message ?? err}`);
+    } finally {
+      clearTimeout(timeout);
     }
-    throw new Error(`Could not reach Gemini: ${err?.message ?? err}`);
-  } finally {
-    clearTimeout(timeout);
+
+    if (response.ok) break;
+    if (RETRYABLE_STATUS.has(response.status) && attempt < attempts - 1) {
+      await sleep(RETRY_DELAYS_MS[attempt]);
+      continue;
+    }
+    break;
   }
 
-  if (!response.ok) {
-    const bodyText = await response.text().catch(() => '');
-    throw new Error(`Gemini API error ${response.status}: ${bodyText.slice(0, 200)}`);
+  const finalResponse = response!;
+  if (!finalResponse.ok) {
+    if (RETRYABLE_STATUS.has(finalResponse.status)) {
+      throw new Error('The AI service is busy right now. Please try again in a moment.');
+    }
+    const bodyText = await finalResponse.text().catch(() => '');
+    throw new Error(`Gemini API error ${finalResponse.status}: ${bodyText.slice(0, 200)}`);
   }
 
-  const data = await response.json();
+  const data = await finalResponse.json();
   const content: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
   let parsed: any;
