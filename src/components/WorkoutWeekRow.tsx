@@ -20,7 +20,7 @@ export function WorkoutWeekRow({ refDateISO, workoutsForDate }: Props) {
         const hasCardio = workouts.some((w) => w.type === 'cardio');
         const hasStrength = workouts.some((w) => w.type === 'strength');
         const isToday = iso === today;
-        const letter = new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'narrow' });
+        const letter = new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' });
 
         return (
           <View key={iso} style={styles.dayCol}>

@@ -19,7 +19,7 @@ export function WeekStrip({ selectedDateISO, onSelect, hasEntry }: Props) {
         const isToday = iso === today;
         const isSelected = iso === selectedDateISO;
         const logged = hasEntry(iso);
-        const letter = new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'narrow' });
+        const letter = new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' });
 
         return (
           <View key={iso} style={styles.dayCol}>
