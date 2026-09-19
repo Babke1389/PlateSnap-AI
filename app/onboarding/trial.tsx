@@ -1,11 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PurchasesPackage } from 'react-native-purchases';
 import { Button } from '../../src/components/Button';
+import {
+  getCurrentOffering,
+  isPurchasesConfigured,
+  isUserCancelledError,
+  purchasePackage,
+} from '../../src/lib/purchases';
 import { useStore } from '../../src/lib/store';
 import { colors, font, radius, spacing } from '../../src/theme';
+
+const purchasesConfigured = isPurchasesConfigured();
 
 const FEATURES = [
   {
@@ -28,12 +37,39 @@ const FEATURES = [
 export default function Trial() {
   const router = useRouter();
   const { startTrial } = useStore();
+  const [pkg, setPkg] = useState<PurchasesPackage | null>(null);
+  const [starting, setStarting] = useState(false);
+
+  useEffect(() => {
+    if (!purchasesConfigured) return;
+    getCurrentOffering()
+      .then((offering) => setPkg(offering?.availablePackages[0] ?? null))
+      .catch(() => setPkg(null));
+  }, []);
 
   const enterApp = () => router.replace('/(tabs)');
 
-  const onStartTrial = () => {
-    startTrial();
-    enterApp();
+  const onStartTrial = async () => {
+    if (!purchasesConfigured) {
+      startTrial();
+      enterApp();
+      return;
+    }
+    if (!pkg) return;
+    setStarting(true);
+    try {
+      await purchasePackage(pkg);
+      enterApp();
+    } catch (err) {
+      if (!isUserCancelledError(err)) {
+        Alert.alert(
+          'Could not start trial',
+          err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+        );
+      }
+    } finally {
+      setStarting(false);
+    }
   };
 
   return (
@@ -61,13 +97,22 @@ export default function Trial() {
           ))}
         </View>
 
-        <Button label="Try free for 7 days" onPress={onStartTrial} style={{ marginTop: spacing.xl }} />
+        <Button
+          label={starting ? 'Starting...' : 'Try free for 7 days'}
+          onPress={onStartTrial}
+          loading={starting}
+          disabled={purchasesConfigured && !pkg}
+          style={{ marginTop: spacing.xl }}
+        />
         <Button label="No thanks" variant="ghost" onPress={enterApp} />
 
-        <Text style={styles.disclaimer}>
-          Demo mode: no payment method required and nothing is charged — starting the trial just
-          unlocks Pro on this device for 7 days for testing. Wire up real billing before shipping.
-        </Text>
+        {!purchasesConfigured ? (
+          <Text style={styles.disclaimer}>
+            Demo mode: no payment method required and nothing is charged — starting the trial just
+            unlocks Pro on this device for 7 days for testing. Wire up real billing before
+            shipping.
+          </Text>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

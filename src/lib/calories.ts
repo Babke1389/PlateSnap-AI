@@ -115,7 +115,7 @@ export function formatDayLabel(dateISO: string): string {
   const today = todayISO();
   if (dateISO === today) return 'Today';
   if (dateISO === addDaysISO(today, -1)) return 'Yesterday';
-  return new Date(dateISO + 'T00:00:00').toLocaleDateString(undefined, {
+  return new Date(dateISO + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',

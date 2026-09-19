@@ -9,11 +9,13 @@ import { Segmented } from '../../src/components/Segmented';
 import { TextField } from '../../src/components/TextField';
 import { ACTIVITY_LABEL } from '../../src/lib/calories';
 import { exportDataAsCsv } from '../../src/lib/csv';
+import { isPurchasesConfigured, restorePurchases } from '../../src/lib/purchases';
 import { useStore } from '../../src/lib/store';
 import { ActivityLevel } from '../../src/lib/types';
 import { colors, font, spacing } from '../../src/theme';
 
 const LEVELS: ActivityLevel[] = ['sedentary', 'light', 'moderate', 'active', 'veryActive'];
+const purchasesConfigured = isPurchasesConfigured();
 
 export default function Settings() {
   const router = useRouter();
@@ -34,8 +36,26 @@ export default function Settings() {
     profile?.activityLevel ?? 'moderate'
   );
   const [exporting, setExporting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   if (!profile) return null;
+
+  const onRestore = async () => {
+    setRestoring(true);
+    try {
+      const status = await restorePurchases();
+      Alert.alert(
+        status.isPro ? 'Restored' : 'Nothing to restore',
+        status.isPro
+          ? 'Your Pro subscription is active on this device.'
+          : "We couldn't find an active subscription for this account."
+      );
+    } catch (err) {
+      Alert.alert('Restore failed', err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const trialActive = isPro && !!trialEndsAt && new Date(trialEndsAt).getTime() > Date.now();
   const trialDaysLeft = trialActive
@@ -105,11 +125,20 @@ export default function Settings() {
             <Button label="Upgrade" fullWidth={false} onPress={() => router.push('/paywall')} />
           )}
         </Card>
-        {isPro ? (
+        {isPro && !purchasesConfigured ? (
           <Button
             label="Turn off Pro (testing)"
             variant="ghost"
             onPress={() => setPro(false)}
+            style={{ marginTop: spacing.xs }}
+          />
+        ) : null}
+        {purchasesConfigured && !isPro ? (
+          <Button
+            label={restoring ? 'Restoring...' : 'Restore purchases'}
+            variant="ghost"
+            loading={restoring}
+            onPress={onRestore}
             style={{ marginTop: spacing.xs }}
           />
         ) : null}

@@ -41,7 +41,7 @@ export default function Home() {
           <View>
             <Text style={styles.greeting}>{formatDayLabel(selectedDate)}</Text>
             <Text style={styles.date}>
-              {new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, {
+              {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'short',
                 day: 'numeric',

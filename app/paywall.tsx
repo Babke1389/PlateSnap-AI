@@ -1,9 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PurchasesPackage } from 'react-native-purchases';
 import { Button } from '../src/components/Button';
+import {
+  getCurrentOffering,
+  isPurchasesConfigured,
+  isUserCancelledError,
+  purchasePackage,
+} from '../src/lib/purchases';
 import { useStore } from '../src/lib/store';
 import { colors, font, radius, spacing } from '../src/theme';
 
@@ -40,14 +47,47 @@ const FEATURES = [
   },
 ] as const;
 
+const purchasesConfigured = isPurchasesConfigured();
+
 export default function Paywall() {
   const router = useRouter();
   const { setPro } = useStore();
+  const [pkg, setPkg] = useState<PurchasesPackage | null>(null);
+  const [loadingOffer, setLoadingOffer] = useState(purchasesConfigured);
+  const [purchasing, setPurchasing] = useState(false);
 
-  const onSubscribe = () => {
-    setPro(true);
-    router.back();
+  useEffect(() => {
+    if (!purchasesConfigured) return;
+    getCurrentOffering()
+      .then((offering) => setPkg(offering?.availablePackages[0] ?? null))
+      .catch(() => setPkg(null))
+      .finally(() => setLoadingOffer(false));
+  }, []);
+
+  const onSubscribe = async () => {
+    if (!purchasesConfigured) {
+      setPro(true);
+      router.back();
+      return;
+    }
+    if (!pkg) return;
+    setPurchasing(true);
+    try {
+      await purchasePackage(pkg);
+      router.back();
+    } catch (err) {
+      if (!isUserCancelledError(err)) {
+        Alert.alert(
+          'Purchase failed',
+          err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+        );
+      }
+    } finally {
+      setPurchasing(false);
+    }
   };
+
+  const priceLabel = pkg?.product.priceString ?? '$6.99/mo';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -77,18 +117,26 @@ export default function Paywall() {
         </View>
 
         <View style={styles.priceCard}>
-          <Text style={styles.priceLabel}>Monthly</Text>
-          <Text style={styles.price}>$6.99/mo</Text>
+          <Text style={styles.priceLabel}>{pkg?.packageType ?? 'Monthly'}</Text>
+          <Text style={styles.price}>{priceLabel}</Text>
         </View>
 
-        <Button label="Continue" onPress={onSubscribe} style={{ marginTop: spacing.lg }} />
+        <Button
+          label={purchasing ? 'Processing...' : 'Continue'}
+          onPress={onSubscribe}
+          loading={purchasing}
+          disabled={purchasesConfigured && (loadingOffer || !pkg)}
+          style={{ marginTop: spacing.lg }}
+        />
         <Button label="Not now" variant="ghost" onPress={() => router.back()} />
 
-        <Text style={styles.disclaimer}>
-          Demo mode: this screen isn't connected to a real payment processor yet, so tapping
-          Continue just unlocks Pro on this device for testing. Wire up Stripe / App Store /
-          Play Billing here before shipping.
-        </Text>
+        {!purchasesConfigured ? (
+          <Text style={styles.disclaimer}>
+            Demo mode: this screen isn't connected to a real payment processor yet, so tapping
+            Continue just unlocks Pro on this device for testing. Wire up Play Billing here before
+            shipping.
+          </Text>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
