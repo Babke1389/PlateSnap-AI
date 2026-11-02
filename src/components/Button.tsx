@@ -45,7 +45,7 @@ export function Button({
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.base,
-        fullWidth && { alignSelf: 'stretch' },
+        fullWidth && styles.fullWidth,
         { backgroundColor: BG[variant] },
         variant === 'outline' && styles.outline,
         (disabled || loading) && styles.disabled,
@@ -69,6 +69,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  fullWidth: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   outline: {
     borderWidth: 1.5,
