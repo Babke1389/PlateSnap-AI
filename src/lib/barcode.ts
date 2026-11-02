@@ -46,6 +46,9 @@ export async function lookupBarcode(code: string): Promise<BarcodeProduct> {
     clearTimeout(timeout);
   }
 
+  if (response.status === 404) {
+    throw new ProductNotFoundError();
+  }
   if (!response.ok) {
     throw new Error(`Product database error ${response.status}`);
   }
