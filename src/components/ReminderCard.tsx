@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useStore } from '../lib/store';
@@ -23,18 +24,14 @@ export function ReminderCard() {
   const { reminders, addReminder, removeReminder, updateReminder } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [label, setLabel] = useState('');
-  const [hour, setHour] = useState('');
-  const [minute, setMinute] = useState('');
+  const [time, setTime] = useState(() => {
+    const d = new Date();
+    d.setHours(9, 0, 0, 0);
+    return d;
+  });
   const [saving, setSaving] = useState(false);
 
-  const canSave =
-    label.trim().length > 0 &&
-    Number(hour) >= 0 &&
-    Number(hour) <= 23 &&
-    hour.trim() !== '' &&
-    Number(minute) >= 0 &&
-    Number(minute) <= 59 &&
-    minute.trim() !== '';
+  const canSave = label.trim().length > 0;
 
   const onAdd = async () => {
     if (!canSave) return;
@@ -48,13 +45,11 @@ export function ReminderCard() {
         );
         return;
       }
-      const h = Math.round(Number(hour));
-      const m = Math.round(Number(minute));
+      const h = time.getHours();
+      const m = time.getMinutes();
       const notificationId = await scheduleDailyReminder(label.trim(), h, m);
       addReminder({ label: label.trim(), hour: h, minute: m, enabled: true, notificationId });
       setLabel('');
-      setHour('');
-      setMinute('');
       setShowForm(false);
     } catch (err) {
       Alert.alert('Could not set reminder', err instanceof Error ? err.message : 'Something went wrong.');
@@ -142,25 +137,20 @@ export function ReminderCard() {
             value={label}
             onChangeText={setLabel}
           />
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <View style={{ flex: 1 }}>
-              <TextField
-                label="Hour"
-                placeholder="0-23"
-                keyboardType="number-pad"
-                value={hour}
-                onChangeText={setHour}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <TextField
-                label="Minute"
-                placeholder="0-59"
-                keyboardType="number-pad"
-                value={minute}
-                onChangeText={setMinute}
-              />
-            </View>
+          <Text style={styles.label}>Time</Text>
+          <View style={styles.pickerWrap}>
+            <DateTimePicker
+              value={time}
+              mode="time"
+              display="spinner"
+              is24Hour={false}
+              themeVariant="dark"
+              textColor={colors.textPrimary}
+              onChange={(_, selected) => {
+                if (selected) setTime(selected);
+              }}
+              style={styles.picker}
+            />
           </View>
           <Button label="Save reminder" onPress={onAdd} disabled={!canSave} loading={saving} />
         </View>
@@ -183,4 +173,21 @@ const styles = StyleSheet.create({
   },
   rowLabel: { color: colors.textPrimary, fontWeight: '600', fontSize: font.size.sm },
   rowTime: { color: colors.textFaint, fontSize: font.size.xs, marginTop: 2 },
+  label: {
+    color: colors.textSecondary,
+    fontSize: font.size.sm,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  pickerWrap: {
+    alignItems: 'center',
+    backgroundColor: colors.cardAlt,
+    borderRadius: 12,
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 160,
+    width: '100%',
+  },
 });
