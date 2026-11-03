@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useStore } from '../lib/store';
@@ -12,7 +11,14 @@ import {
 import { colors, font, spacing } from '../theme';
 import { Button } from './Button';
 import { Card } from './Card';
+import { InlineTimePicker, TimeValue } from './InlineTimePicker';
 import { TextField } from './TextField';
+
+function to24Hour(value: TimeValue): { hour: number; minute: number } {
+  let hour = value.hour12 % 12;
+  if (value.period === 'PM') hour += 12;
+  return { hour, minute: value.minute };
+}
 
 function formatTime(hour: number, minute: number): string {
   const h = hour % 12 === 0 ? 12 : hour % 12;
@@ -24,11 +30,7 @@ export function ReminderCard() {
   const { reminders, addReminder, removeReminder, updateReminder } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [label, setLabel] = useState('');
-  const [time, setTime] = useState(() => {
-    const d = new Date();
-    d.setHours(9, 0, 0, 0);
-    return d;
-  });
+  const [time, setTime] = useState<TimeValue>({ hour12: 9, minute: 0, period: 'AM' });
   const [saving, setSaving] = useState(false);
 
   const canSave = label.trim().length > 0;
@@ -45,8 +47,7 @@ export function ReminderCard() {
         );
         return;
       }
-      const h = time.getHours();
-      const m = time.getMinutes();
+      const { hour: h, minute: m } = to24Hour(time);
       const notificationId = await scheduleDailyReminder(label.trim(), h, m);
       addReminder({ label: label.trim(), hour: h, minute: m, enabled: true, notificationId });
       setLabel('');
@@ -138,20 +139,7 @@ export function ReminderCard() {
             onChangeText={setLabel}
           />
           <Text style={styles.label}>Time</Text>
-          <View style={styles.pickerWrap}>
-            <DateTimePicker
-              value={time}
-              mode="time"
-              display="spinner"
-              is24Hour={false}
-              themeVariant="dark"
-              textColor={colors.textPrimary}
-              onChange={(_, selected) => {
-                if (selected) setTime(selected);
-              }}
-              style={styles.picker}
-            />
-          </View>
+          <InlineTimePicker value={time} onChange={setTime} />
           <Button label="Save reminder" onPress={onAdd} disabled={!canSave} loading={saving} />
         </View>
       ) : null}
@@ -178,16 +166,5 @@ const styles = StyleSheet.create({
     fontSize: font.size.sm,
     fontWeight: '600',
     marginBottom: spacing.xs,
-  },
-  pickerWrap: {
-    alignItems: 'center',
-    backgroundColor: colors.cardAlt,
-    borderRadius: 12,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 160,
-    width: '100%',
   },
 });
