@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { colors, font, radius, spacing } from '../theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -39,20 +39,20 @@ export function Button({
   style,
   fullWidth = true,
 }: Props) {
-  // Style is a plain array, not a function of `pressed` — on Android a
-  // function-form style on Pressable can leave the actual touch target
-  // sized to the first-pass (content-only) layout instead of the final
-  // stretched box, so only the label text area registers taps. Press
-  // feedback is applied to the inner content via the children render-prop
-  // instead, which doesn't affect the outer touchable's hit area.
+  // The colored/rounded shape lives on a plain, non-interactive View, and the
+  // Pressable is a plain child that just fills it. On Android, a Pressable
+  // that itself carries alignSelf:'stretch' / width:'100%' can end up with a
+  // touch region that doesn't match its painted bounds (a long-standing RN
+  // Android quirk), so only the label area responds to taps. Letting the
+  // outer View own the sizing and the Pressable simply stretch to fill it
+  // (the default behavior for a block child) keeps its hit box always in
+  // sync with what's drawn. collapsable={false} additionally opts the
+  // Pressable out of native view-flattening, which can otherwise strand its
+  // touch target at a stale, smaller layout.
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled || loading}
-      hitSlop={6}
-      android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
+    <View
       style={[
-        styles.base,
+        styles.shape,
         fullWidth && styles.fullWidth,
         { backgroundColor: BG[variant] },
         variant === 'outline' && styles.outline,
@@ -60,32 +60,38 @@ export function Button({
         style,
       ]}
     >
-      {({ pressed }) =>
-        loading ? (
-          <ActivityIndicator color={TEXT_COLOR[variant]} />
-        ) : (
-          <Text
-            style={[
-              styles.label,
-              { color: TEXT_COLOR[variant] },
-              pressed && !disabled && styles.labelPressed,
-            ]}
-          >
-            {label}
-          </Text>
-        )
-      }
-    </Pressable>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled || loading}
+        hitSlop={6}
+        collapsable={false}
+        android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
+        style={styles.touchable}
+      >
+        {({ pressed }) =>
+          loading ? (
+            <ActivityIndicator color={TEXT_COLOR[variant]} />
+          ) : (
+            <Text
+              style={[
+                styles.label,
+                { color: TEXT_COLOR[variant] },
+                pressed && !disabled && styles.labelPressed,
+              ]}
+            >
+              {label}
+            </Text>
+          )
+        }
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+  shape: {
     borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
   },
   fullWidth: {
     alignSelf: 'stretch',
@@ -97,6 +103,12 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.4,
+  },
+  touchable: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
     fontSize: font.size.md,

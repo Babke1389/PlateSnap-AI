@@ -60,6 +60,7 @@ export function WheelColumn({ items, selectedIndex, onChange, width }: Props) {
       onMomentumScrollEnd={handleScrollEnd}
       onScrollEndDrag={handleScrollEnd}
       scrollEventThrottle={16}
+      nestedScrollEnabled
     >
       {items.map((label, i) => {
         const distance = Math.abs(i - selectedIndex);
