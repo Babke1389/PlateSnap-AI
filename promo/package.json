@@ -1,0 +1,21 @@
+{
+  "name": "platesnap-promo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion promo video for Platesnap AI",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render PlatesnapPromo out/platesnap-promo.mp4",
+    "still": "remotion still PlatesnapPromo out/poster.png --frame=560"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.540",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.540"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.4",
+    "typescript": "~6.0.3"
+  }
+}
