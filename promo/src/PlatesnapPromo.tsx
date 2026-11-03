@@ -1,5 +1,6 @@
 import React from 'react';
 import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { Soundtrack } from './Soundtrack';
 import { colors, fontFamily } from './theme';
 import { Background, Headline, MacroBar, Phone, Plate, SceneFade, clamp, easeOut, usePop } from './components';
 
@@ -31,6 +32,7 @@ export const PlatesnapPromo: React.FC = () => {
   return (
     <AbsoluteFill style={{ fontFamily }}>
       <Background />
+      <Soundtrack totalFrames={PROMO_DURATION} />
       {SCENES.map((s, i) => {
         const C = components[s.id];
         return (

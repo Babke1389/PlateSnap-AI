@@ -15,4 +15,19 @@ npm run still    # writes out/poster.png
 ```
 
 Edit scene lengths in `SCENES` at the top of `src/PlatesnapPromo.tsx`; copy and numbers are inline in each scene.
-The video has no audio track; add music with Remotion's `<Audio>` component if you have a licensed track.
+## Audio
+
+- **Music** (`public/audio/music.wav`): a chill lo-fi bed generated in code by `scripts/music.py`
+  (synthesised electric piano, bass and drums, no samples), so there is nothing to license.
+- **Narration** (`public/audio/vo1-5.wav`): English voice-over made with the open-source
+  [Kokoro](https://github.com/thewh1teagle/kokoro-onnx) TTS model (voice `af_heart`) by `scripts/narration.py`,
+  then loudness-normalised to -15 LUFS with ffmpeg `loudnorm`.
+- `src/Soundtrack.tsx` places each line and ducks the music under the voice. If you re-record lines,
+  update their `at`/`dur` there.
+
+Script:
+1. "Snap your plate. Know your calories."
+2. "PlateSnap AI scans your meal, and estimates calories and macros in seconds."
+3. "Track every macro, every day, and watch your progress add up."
+4. "Log by photo or text, follow your trends, and see how far you've come."
+5. "PlateSnap AI. Download free today."
