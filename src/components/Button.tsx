@@ -39,25 +39,42 @@ export function Button({
   style,
   fullWidth = true,
 }: Props) {
+  // Style is a plain array, not a function of `pressed` — on Android a
+  // function-form style on Pressable can leave the actual touch target
+  // sized to the first-pass (content-only) layout instead of the final
+  // stretched box, so only the label text area registers taps. Press
+  // feedback is applied to the inner content via the children render-prop
+  // instead, which doesn't affect the outer touchable's hit area.
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      style={({ pressed }) => [
+      hitSlop={6}
+      android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
+      style={[
         styles.base,
         fullWidth && styles.fullWidth,
         { backgroundColor: BG[variant] },
         variant === 'outline' && styles.outline,
         (disabled || loading) && styles.disabled,
-        pressed && !disabled && !loading && styles.pressed,
         style,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={TEXT_COLOR[variant]} />
-      ) : (
-        <Text style={[styles.label, { color: TEXT_COLOR[variant] }]}>{label}</Text>
-      )}
+      {({ pressed }) =>
+        loading ? (
+          <ActivityIndicator color={TEXT_COLOR[variant]} />
+        ) : (
+          <Text
+            style={[
+              styles.label,
+              { color: TEXT_COLOR[variant] },
+              pressed && !disabled && styles.labelPressed,
+            ]}
+          >
+            {label}
+          </Text>
+        )
+      }
     </Pressable>
   );
 }
@@ -81,12 +98,11 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.4,
   },
-  pressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.99 }],
-  },
   label: {
     fontSize: font.size.md,
     fontWeight: '700',
+  },
+  labelPressed: {
+    opacity: 0.7,
   },
 });
