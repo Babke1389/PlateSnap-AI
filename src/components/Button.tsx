@@ -1,5 +1,6 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Pressable } from 'react-native-gesture-handler';
 import { colors, font, radius, spacing } from '../theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -39,14 +40,17 @@ export function Button({
   style,
   fullWidth = true,
 }: Props) {
-  // Width comes from flex-grow in a row, not from alignSelf:'stretch' or a
-  // percentage width on the Pressable itself. Both of the earlier
-  // approaches (stretch directly on the Pressable, and an absolutely
-  // positioned Pressable overlay) painted correctly but left Android's
-  // touch region wrong — undersized in one case, zero-sized in the other.
-  // flex-grow resolves the Pressable's own main-axis size in the same
-  // layout pass as everything else, which is the one sizing path that has
-  // actually matched its touch region on-device.
+  // Pressable here is react-native-gesture-handler's, not core RN's. Core
+  // RN's Pressable/TouchableOpacity both sit on top of the same JS-side
+  // "Pressability" module, which on this RN version measures its own hit
+  // region and compares it against the native hit test — on Fabric that
+  // measured region can go stale relative to the view's final flex-resolved
+  // layout, so only a center strip (the pre-flex size) keeps registering
+  // taps, no matter which flexbox mechanism (stretch, flex-grow) produces
+  // the final width. RNGH's Pressable instead attaches a native gesture
+  // recognizer straight to the view, so its hit area is whatever the OS
+  // already knows the view's bounds to be — no separate JS measurement to
+  // go stale.
   return (
     <View style={fullWidth ? styles.row : undefined}>
       <Pressable
