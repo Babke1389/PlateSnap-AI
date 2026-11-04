@@ -39,46 +39,58 @@ export function Button({
   style,
   fullWidth = true,
 }: Props) {
-  // The label sits in normal flow so the outer box sizes itself off the
-  // content + padding like any button. The Pressable is a *separate*,
-  // absolutely-positioned layer pinned to all four edges of that box
-  // (StyleSheet.absoluteFillObject) instead of being the sized element
-  // itself. A Pressable that has to carry the stretch/percentage sizing
-  // directly (alignSelf:'stretch' + width:'100%') can end up on Android
-  // with a native touch region that doesn't match its painted bounds —
-  // the paint reflects the final layout pass but the hit-test rect can be
-  // left over from an earlier one. Absolute-filling a parent whose own
-  // size is already settled sidesteps that resync entirely: the Pressable's
-  // bounds are always read directly off the parent's resolved box.
+  // Width comes from flex-grow in a row, not from alignSelf:'stretch' or a
+  // percentage width on the Pressable itself. Both of the earlier
+  // approaches (stretch directly on the Pressable, and an absolutely
+  // positioned Pressable overlay) painted correctly but left Android's
+  // touch region wrong — undersized in one case, zero-sized in the other.
+  // flex-grow resolves the Pressable's own main-axis size in the same
+  // layout pass as everything else, which is the one sizing path that has
+  // actually matched its touch region on-device.
   return (
-    <View
-      style={[
-        styles.shape,
-        fullWidth && styles.fullWidth,
-        { backgroundColor: BG[variant] },
-        variant === 'outline' && styles.outline,
-        (disabled || loading) && styles.disabled,
-        style,
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator color={TEXT_COLOR[variant]} />
-      ) : (
-        <Text style={[styles.label, { color: TEXT_COLOR[variant] }]}>{label}</Text>
-      )}
+    <View style={fullWidth ? styles.row : undefined}>
       <Pressable
         onPress={onPress}
         disabled={disabled || loading}
         hitSlop={6}
         collapsable={false}
         android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
-        style={StyleSheet.absoluteFill}
-      />
+        style={[
+          styles.shape,
+          fullWidth && styles.flexFill,
+          { backgroundColor: BG[variant] },
+          variant === 'outline' && styles.outline,
+          (disabled || loading) && styles.disabled,
+          style,
+        ]}
+      >
+        {({ pressed }) =>
+          loading ? (
+            <ActivityIndicator color={TEXT_COLOR[variant]} />
+          ) : (
+            <Text
+              style={[
+                styles.label,
+                { color: TEXT_COLOR[variant] },
+                pressed && !disabled && styles.labelPressed,
+              ]}
+            >
+              {label}
+            </Text>
+          )
+        }
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+  },
+  flexFill: {
+    flex: 1,
+  },
   shape: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -86,10 +98,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  fullWidth: {
-    alignSelf: 'stretch',
-    width: '100%',
   },
   outline: {
     borderWidth: 1.5,
@@ -101,5 +109,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: font.size.md,
     fontWeight: '700',
+  },
+  labelPressed: {
+    opacity: 0.7,
   },
 });
