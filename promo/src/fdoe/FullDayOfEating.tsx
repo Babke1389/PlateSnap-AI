@@ -1,5 +1,6 @@
 import React from 'react';
-import { AbsoluteFill, Html5Audio, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { Soundtrack, VoiceLine } from '../Soundtrack';
 import { colors, fontFamily } from '../theme';
 import { MacroBar, Phone, clamp, easeOut, usePop } from '../components';
 import { Logo } from '../PlatesnapPromo';
@@ -29,6 +30,18 @@ const starts = SCENES.reduce<number[]>((acc, s, i) => {
   acc.push(i === 0 ? 0 : acc[i - 1] + SCENES[i - 1].duration);
   return acc;
 }, []);
+// Female narrator (Kokoro af_heart, scripts/narration.py ... fdoe). Seconds from the start of the video.
+const NARRATION: VoiceLine[] = [
+  { file: 'audio/fdoe-vo1.wav', at: 0.3, dur: 2.69 }, // Here's a full day of eating...
+  { file: 'audio/fdoe-vo2.wav', at: 4.2, dur: 4.39 }, // First up, a burger bowl...
+  { file: 'audio/fdoe-vo3.wav', at: 9.0, dur: 7.25 }, // Then some watermelon and pineapple...
+  { file: 'audio/fdoe-vo4.wav', at: 18.2, dur: 0.98 }, // Quick banana.
+  { file: 'audio/fdoe-vo5.wav', at: 20.8, dur: 2.09 }, // Turkey and bacon sandwich...
+  { file: 'audio/fdoe-vo6.wav', at: 24.1, dur: 2.97 }, // Cajun chicken pasta...
+  { file: 'audio/fdoe-vo7.wav', at: 27.5, dur: 2.24 }, // And for dinner...
+  { file: 'audio/fdoe-vo8.wav', at: 31.6, dur: 3.88 }, // Over thirty-four hundred calories...
+];
+
 export const FDOE_DURATION = starts[starts.length - 1] + SCENES[SCENES.length - 1].duration;
 
 export const FullDayOfEating: React.FC = () => {
@@ -42,13 +55,9 @@ export const FullDayOfEating: React.FC = () => {
     burrito: Burrito,
     outro: Outro,
   };
-  const frame = useCurrentFrame();
   return (
     <AbsoluteFill style={{ fontFamily, backgroundColor: '#000' }}>
-      <Html5Audio
-        src={staticFile('audio/fdoe-music.wav')}
-        volume={interpolate(frame, [FDOE_DURATION - 40, FDOE_DURATION], [0.9, 0], clamp)}
-      />
+      <Soundtrack totalFrames={FDOE_DURATION} music="audio/fdoe-music.wav" lines={NARRATION} full={0.7} ducked={0.25} />
       {SCENES.map((s, i) => {
         const C = map[s.id];
         return (

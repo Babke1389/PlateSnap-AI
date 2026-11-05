@@ -43,4 +43,8 @@ track (`public/audio/fdoe-music.wav`, from `python scripts/music.py public/audio
 npx remotion render FullDayOfEating out/platesnap-full-day-of-eating.mp4
 ```
 
+Narration: female voice (Kokoro `af_heart`), made with
+`python scripts/narration.py af_heart public/audio fdoe` and loudness-normalised like the first video;
+line timings are in `NARRATION` in `src/fdoe/FullDayOfEating.tsx`, and the music ducks under each line.
+
 Code: `src/fdoe/FullDayOfEating.tsx` (scenes, calorie numbers) and `src/fdoe/foods.tsx` (food illustrations).
