@@ -1,6 +1,7 @@
 import { Composition } from 'remotion';
 import { PlatesnapPromo, PROMO_DURATION } from './PlatesnapPromo';
 import { FullDayOfEating, FDOE_DURATION } from './fdoe/FullDayOfEating';
+import { TierSlideshow, TIER_DURATION } from './tier/TierSlideshow';
 
 export const RemotionRoot: React.FC = () => (
   <>
@@ -16,6 +17,14 @@ export const RemotionRoot: React.FC = () => (
       id="FullDayOfEating"
       component={FullDayOfEating}
       durationInFrames={FDOE_DURATION}
+      fps={30}
+      width={1080}
+      height={1920}
+    />
+    <Composition
+      id="BicepsTierList"
+      component={TierSlideshow}
+      durationInFrames={TIER_DURATION}
       fps={30}
       width={1080}
       height={1920}

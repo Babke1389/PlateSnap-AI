@@ -1,8 +1,9 @@
 """Procedurally generated chill lo-fi bed for the promo (no samples, no licensing).
 
-Usage: python scripts/music.py public/audio/music.wav [length_s] [bpm] [drums_in_s] [seed]
+Usage: [MOOD=dark] python scripts/music.py public/audio/music.wav [length_s] [bpm] [drums_in_s] [seed]
 Needs numpy, scipy, soundfile.
 """
+import os
 import sys
 import numpy as np
 import soundfile as sf
@@ -84,6 +85,14 @@ CHORDS = [
     (38, [57, 60, 64, 65]),  # Dm : A C E F
     (36, [55, 59, 62, 64]),  # C  : G B D E
 ]
+if os.environ.get("MOOD") == "dark":
+    # Am7 - Fmaj7 - Dm7 - E7: moodier minor loop for the gym slideshow
+    CHORDS = [
+        (45, [55, 60, 64, 69]),
+        (41, [57, 60, 64, 69]),
+        (38, [57, 60, 62, 65]),
+        (40, [56, 59, 62, 64]),
+    ]
 BAR = 4 * BEAT
 bars = int(np.ceil(LENGTH / BAR))
 DRUMS_IN = float(sys.argv[4]) if len(sys.argv) > 4 else 2.7  # drums enter with the scan scene

@@ -48,3 +48,16 @@ Narration: female voice (Kokoro `af_heart`), made with
 line timings are in `NARRATION` in `src/fdoe/FullDayOfEating.tsx`, and the music ducks under each line.
 
 Code: `src/fdoe/FullDayOfEating.tsx` (scenes, calorie numbers) and `src/fdoe/foods.tsx` (food illustrations).
+
+## Third video: "Biceps tier list" (`BicepsTierList`)
+
+A 21 s slideshow in the gym tier-list format: seven illustrated slides (masked lifter, veiny
+arm close-ups, dark gym and hallway backgrounds) with TikTok-style captions, a slow Ken Burns push,
+film grain and vignette, hard cuts every 4 beats, and a "Pro tip" slide showing PlateSnap.
+Music: `MOOD=dark python scripts/music.py public/audio/tier-music.wav 22.5 80 1.5 33`.
+
+```bash
+npx remotion render BicepsTierList out/platesnap-biceps-tier-list.mp4
+```
+
+Code: `src/tier/TierSlideshow.tsx` (slides and captions) and `src/tier/art.tsx` (illustrations).
