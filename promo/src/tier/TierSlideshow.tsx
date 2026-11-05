@@ -39,8 +39,8 @@ const SLIDES: Slide[] = [
     body: 'almost perfect. my arms\ngrew insanely fast on these',
     art: (
       <>
-        <GymDark bokeh />
-        <Lifter id="s2" pose="selfie" />
+        <GymDark />
+        <Lifter id="s2" pose="selfie" shorts />
       </>
     ),
   },
