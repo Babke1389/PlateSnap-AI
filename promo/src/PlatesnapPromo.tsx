@@ -479,7 +479,7 @@ const FeatureCard: React.FC<{ title: string; desc: string; color: string; icon: 
 
 /* ----------------------------------- 5. CTA ---------------------------------- */
 
-const Logo: React.FC<{ size: number }> = ({ size }) => (
+export const Logo: React.FC<{ size: number }> = ({ size }) => (
   <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
     <rect width="120" height="120" rx="32" fill={colors.card} stroke={colors.border} strokeWidth="2" />
     <circle cx="60" cy="60" r="26" stroke={colors.textPrimary} strokeWidth="6" />

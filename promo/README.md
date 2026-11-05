@@ -31,3 +31,16 @@ Script:
 3. "Track every macro, every day, and watch your progress add up."
 4. "Log by photo or text, follow your trends, and see how far you've come."
 5. "PlateSnap AI. Download free today."
+
+## Second video: "Full day of eating" (`FullDayOfEating`)
+
+A ~37 s UGC-style ad in the "full day of eating" format, fully animated: intro with the daily
+target, six illustrated meals with TikTok-style captions and hand-held camera drift, a PlateSnap
+photo-scan and Today screen, and a day-total end card. Hard cuts land on the beat of a 90 BPM
+track (`public/audio/fdoe-music.wav`, from `python scripts/music.py public/audio/fdoe-music.wav 38 90 0 21`).
+
+```bash
+npx remotion render FullDayOfEating out/platesnap-full-day-of-eating.mp4
+```
+
+Code: `src/fdoe/FullDayOfEating.tsx` (scenes, calorie numbers) and `src/fdoe/foods.tsx` (food illustrations).
