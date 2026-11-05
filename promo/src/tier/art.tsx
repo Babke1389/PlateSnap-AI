@@ -174,9 +174,9 @@ const Sh: React.FC<{ id: string; d: string; o?: number; w?: number }> = ({ id, d
   <path d={d} fill="none" stroke="#1E0F07" strokeWidth={w} strokeLinecap="round" opacity={o} filter={`url(#${id}-soft)`} />
 );
 
-export type Pose = 'selfie' | 'flex';
+export type Pose = 'selfie' | 'flex' | 'double';
 
-/** Front-facing muscular lifter. `selfie`: phone held up to the face. `flex`: arm up, biceps flexed. */
+/** Front-facing muscular lifter. `selfie`: phone held up to the face. `flex`: arm up, biceps flexed. `double`: double-biceps pose. */
 export const Lifter: React.FC<{ id: string; pose: Pose; shorts?: boolean }> = ({ id, pose, shorts }) => {
   const skin = `url(#${id}-skin)`;
   return (
@@ -232,6 +232,8 @@ export const Lifter: React.FC<{ id: string; pose: Pose; shorts?: boolean }> = ({
       <Sh id={id} d="M640 880 L 612 1110" w={12} o={0.7} />
       <Sh id={id} d="M420 1120 Q 540 1060 660 1120" w={12} o={0.6} />
 
+      {pose !== 'double' ? (
+        <>
       {/* viewer-right arm hanging down */}
       <path d="M720 640 C 820 650, 850 780, 835 900 L 790 905 C 770 820, 740 760, 710 720 Z" fill={skin} />
       <path d="M780 880 C 845 900, 862 1000, 848 1130 C 842 1180, 815 1212, 790 1215 C 752 1200, 748 1100, 752 1000 Z" fill={skin} />
@@ -240,6 +242,8 @@ export const Lifter: React.FC<{ id: string; pose: Pose; shorts?: boolean }> = ({
       <Sh id={id} d="M840 700 C 860 820, 850 900, 830 1100" w={30} o={0.8} />
       <Sh id={id} d="M780 905 Q 800 900 828 910" w={10} />
       <Hi id={id} d="M700 640 Q 750 600 800 640 Q 760 680 715 690 Z" o={0.25} />
+        </>
+      ) : null}
 
       {/* traps */}
       <path d="M470 560 C 420 580, 380 600, 350 620 L 730 620 C 700 600, 660 580, 610 560 Z" fill={skin} />
@@ -267,7 +271,7 @@ export const Lifter: React.FC<{ id: string; pose: Pose; shorts?: boolean }> = ({
             <rect key={i} x={408} y={370 + i * 42} width={44} height={30} rx={15} fill={skin} />
           ))}
         </>
-      ) : (
+      ) : pose === 'flex' ? (
         <>
           {/* viewer-left arm raised: upper arm out, forearm up to the head (biceps flex) */}
           <ellipse cx={320} cy={680} rx={100} ry={110} fill={skin} />
@@ -281,6 +285,26 @@ export const Lifter: React.FC<{ id: string; pose: Pose; shorts?: boolean }> = ({
           <MaskedHead id={id} cx={560} cy={400} tilt={8} />
           <ellipse cx={440} cy={312} rx={58} ry={50} fill={skin} transform="rotate(-30 440 312)" />
           <Sh id={id} d="M410 340 Q 450 350 480 320" w={8} o={0.5} />
+        </>
+      ) : (
+        <>
+          {/* double biceps: both arms up, fists by the head */}
+          {[false, true].map((mirror) => (
+            <g key={String(mirror)} transform={mirror ? 'translate(1080 0) scale(-1 1)' : undefined}>
+              <ellipse cx={330} cy={640} rx={90} ry={88} fill={skin} />
+              <path d="M330 600 C 260 560, 170 570, 130 610 L 160 730 C 220 710, 290 705, 350 725 Z" fill={skin} />
+              <path d="M150 612 C 175 500, 305 500, 332 606 C 282 638, 200 638, 150 612 Z" fill={skin} />
+              <Hi id={id} d="M185 565 Q 245 512 305 565 Q 255 595 195 590 Z" o={0.7} />
+              <path d="M122 630 C 105 520, 125 430, 160 365 L 245 378 C 228 450, 218 530, 220 625 Z" fill={skin} />
+              <ellipse cx={202} cy={345} rx={58} ry={52} fill={skin} />
+              <Sh id={id} d="M150 722 Q 250 708 345 728" w={22} />
+              <Sh id={id} d="M218 610 C 215 520, 225 450, 240 390" w={12} o={0.6} />
+              <Sh id={id} d="M160 372 Q 200 395 245 380" w={8} o={0.5} />
+            </g>
+          ))}
+          {/* keep the far arm in shadow (key light is on the left) */}
+          <path d="M740 280 L 1010 280 L 1010 780 L 740 780 Z" fill="#000" opacity={0.38} filter={`url(#${id}-softer)`} />
+          <MaskedHead id={id} cx={560} cy={405} />
         </>
       )}
     </svg>
