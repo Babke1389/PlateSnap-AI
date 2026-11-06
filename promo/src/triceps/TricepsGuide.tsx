@@ -15,6 +15,8 @@ import {
   Studio,
   at,
   kneelingJoints,
+  MAX_BEND,
+  UPPER_ARM,
   pushdownJoints,
 } from './Mannequin';
 
@@ -365,7 +367,7 @@ const Demo: React.FC = () => {
         <Bench glow={0.6 * glow} />
         <CableLine from={j.hand} to={PULLEY} />
         <KneelingFigure bend={bend} green={glow} />
-        <RomArc elbow={j.elbow} r={150} from={-160} to={5} color="#2BFF7A" dash={dash} opacity={glow} />
+        <RomArc elbow={j.elbow} r={150} from={UPPER_ARM} to={UPPER_ARM + MAX_BEND} color="#2BFF7A" dash={dash} opacity={glow} />
       </Stage>
       <Caption>
         stretch deep behind your head,
@@ -394,7 +396,7 @@ const Wide: React.FC = () => {
           <circle cx={PULLEY[0]} cy={PULLEY[1]} r={70} fill="none" stroke="#2BFF7A" strokeWidth={8} />
           <circle cx={PULLEY[0]} cy={PULLEY[1]} r={70} fill="none" stroke="#2BFF7A" strokeWidth={20} opacity={0.4} filter="url(#mq-glow)" />
         </g>
-        <RomArc elbow={j.elbow} r={150} from={-160} to={5} color="#5EA0FF" dash={frame * 3} opacity={reps} />
+        <RomArc elbow={j.elbow} r={150} from={UPPER_ARM} to={UPPER_ARM + MAX_BEND} color="#5EA0FF" dash={frame * 3} opacity={reps} />
       </Stage>
       {frame < 60 ? (
         <Caption key="a">

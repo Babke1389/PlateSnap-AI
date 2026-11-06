@@ -80,6 +80,8 @@ export const Head: React.FC<{ c: Pt; r: number; tilt?: number }> = ({ c, r, tilt
  */
 /** Upper-arm angle in the kneeling pose: resting along the bench pad. */
 export const UPPER_ARM = -160;
+/** How far the forearm folds back at full stretch (degrees). Kept modest so it looks natural. */
+export const MAX_BEND = 115;
 
 export const kneelingJoints = (bend: number) => {
   const knee: Pt = [660, 1300];
@@ -87,7 +89,7 @@ export const kneelingJoints = (bend: number) => {
   const hip = at(knee, -82, 175);
   const shoulder = at(hip, 190, 240);
   const elbow = at(shoulder, UPPER_ARM, 150);
-  const forearmAngle = UPPER_ARM + bend * 165;
+  const forearmAngle = UPPER_ARM + bend * MAX_BEND;
   const hand = at(elbow, forearmAngle, 135);
   const head: Pt = [shoulder[0] - 62, shoulder[1] + 58];
   return { knee, foot, hip, shoulder, elbow, hand, head, forearmAngle };
@@ -135,7 +137,8 @@ export const pushdownJoints = (push: number) => {
   const hip: Pt = [520, 1060];
   const shoulder = at(hip, -92, 250);
   const elbow = at(shoulder, 92, 150);
-  const forearmAngle = -150 + push * 240;
+  // elbow pinned at the side: forearm goes from roughly horizontal to straight down
+  const forearmAngle = 175 - push * 85;
   const hand = at(elbow, forearmAngle, 135);
   return { hip, shoulder, elbow, hand, forearmAngle, kneeL: at(hip, 96, 200), kneeR: at(hip, 84, 200) };
 };
