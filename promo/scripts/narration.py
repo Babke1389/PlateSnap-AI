@@ -4,7 +4,8 @@ Setup:  pip install kokoro-onnx soundfile
         download kokoro-v1.0.onnx and voices-v1.0.bin from
         https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
 Usage:  python scripts/narration.py [voice] [out_dir] [set]   (default: af_heart public/audio promo)
-        set "fdoe" writes the "full day of eating" lines as fdoe-vo1..8.wav
+        set "fdoe" writes the "full day of eating" lines as fdoe-vo1..8.wav,
+        set "triceps" writes tri-vo1..6.wav (used with voice am_michael)
 If line lengths change, update `dur` in src/Soundtrack.tsx (printed below).
 """
 import os
@@ -26,6 +27,14 @@ FDOE = [
  "And for dinner, a steak burrito bowl.",
  "Over thirty-four hundred calories, all tracked with PlateSnap AI.",
 ]
+TRICEPS = [
+ "This is the triceps exercise most people skip.",
+ "Kneel behind a flat bench, and rest your elbows on the pad.",
+ "Pushdowns only give you a short stretch. Go overhead instead.",
+ "Cutting or bulking? Track every meal and macro with PlateSnap AI.",
+ "Let the weight stretch you behind your head, then lock out.",
+ "Set the cable low, and do three sets of ten to twelve, slow on the way down.",
+]
 lines = [
  "Snap your plate. Know your calories.",
  "PlateSnap AI scans your meal, and estimates calories and macros in seconds.",
@@ -36,6 +45,8 @@ lines = [
 prefix = "vo"
 if which == "fdoe":
     lines, prefix = FDOE, "fdoe-vo"
+elif which == "triceps":
+    lines, prefix = TRICEPS, "tri-vo"
 for i, t in enumerate(lines):
     a, sr = k.create(t, voice=voice, speed=1.0, lang="en-us")
     sf.write(f"{out}/{prefix}{i+1}.wav", a, sr)

@@ -1,7 +1,7 @@
 import React from 'react';
 import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { colors, fontFamily } from '../theme';
-import { Soundtrack } from '../Soundtrack';
+import { Soundtrack, VoiceLine } from '../Soundtrack';
 import { MiniToday } from '../tier/TierSlideshow';
 import {
   BODY_DEFS,
@@ -38,6 +38,16 @@ const starts = SCENES.reduce<number[]>((acc, s, i) => {
   acc.push(i === 0 ? 0 : acc[i - 1] + SCENES[i - 1].duration);
   return acc;
 }, []);
+// Male narrator (Kokoro am_michael, `python scripts/narration.py am_michael public/audio triceps`).
+const NARRATION: VoiceLine[] = [
+  { file: 'audio/tri-vo1.wav', at: 0.15, dur: 3.18 }, // This is the triceps exercise most people skip.
+  { file: 'audio/tri-vo2.wav', at: 3.65, dur: 3.84 }, // Kneel behind a flat bench...
+  { file: 'audio/tri-vo3.wav', at: 7.6, dur: 4.01 }, // Pushdowns only give you a short stretch...
+  { file: 'audio/tri-vo4.wav', at: 12.15, dur: 4.65 }, // Cutting or bulking? ... PlateSnap AI.
+  { file: 'audio/tri-vo5.wav', at: 17.15, dur: 3.43 }, // Let the weight stretch you...
+  { file: 'audio/tri-vo6.wav', at: 21.7, dur: 5.1 }, // Set the cable low...
+];
+
 export const TRICEPS_DURATION = starts[starts.length - 1] + SCENES[SCENES.length - 1].duration;
 
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
@@ -54,7 +64,7 @@ export const TricepsGuide: React.FC = () => {
   };
   return (
     <AbsoluteFill style={{ fontFamily, backgroundColor: '#0A1A55' }}>
-      <Soundtrack totalFrames={TRICEPS_DURATION} music="audio/triceps-music.wav" lines={[]} full={0.8} ducked={0.8} />
+      <Soundtrack totalFrames={TRICEPS_DURATION} music="audio/triceps-music.wav" lines={NARRATION} full={0.75} ducked={0.22} />
       {SCENES.map((s, i) => {
         const C = map[s.id];
         return (

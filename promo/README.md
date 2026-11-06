@@ -68,6 +68,8 @@ A 27 s 3D-anatomy-style explainer for the kneeling overhead cable triceps extens
 mannequin built from capsules (`src/triceps/Mannequin.tsx`), red muscle highlight, green/blue
 range-of-motion arcs, a pushdown comparison, and a mid-video PlateSnap AI "cutting or bulking?"
 insert. Music: `python scripts/music.py public/audio/triceps-music.wav 28 96 0 44`.
+Narration: male voice (Kokoro `am_michael`) via `python scripts/narration.py am_michael public/audio triceps`;
+line timings are in `NARRATION` in `src/triceps/TricepsGuide.tsx`.
 
 ```bash
 npx remotion render TricepsGuide out/platesnap-triceps-guide.mp4
