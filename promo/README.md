@@ -61,3 +61,14 @@ npx remotion render BicepsTierList out/platesnap-biceps-tier-list.mp4
 ```
 
 Code: `src/tier/TierSlideshow.tsx` (slides and captions) and `src/tier/art.tsx` (illustrations).
+
+## Fourth video: triceps exercise explainer (`TricepsGuide`)
+
+A 27 s 3D-anatomy-style explainer for the kneeling overhead cable triceps extension: glossy
+mannequin built from capsules (`src/triceps/Mannequin.tsx`), red muscle highlight, green/blue
+range-of-motion arcs, a pushdown comparison, and a mid-video PlateSnap AI "cutting or bulking?"
+insert. Music: `python scripts/music.py public/audio/triceps-music.wav 28 96 0 44`.
+
+```bash
+npx remotion render TricepsGuide out/platesnap-triceps-guide.mp4
+```

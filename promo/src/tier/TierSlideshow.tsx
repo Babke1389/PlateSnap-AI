@@ -141,7 +141,7 @@ const TikTokText: React.FC<{ children: string; size: number }> = ({ children, si
 );
 
 /** Small PlateSnap "Today" screen for the pro-tip slide. */
-function MiniToday() {
+export function MiniToday() {
   const frame = useCurrentFrame();
   const ring = interpolate(frame, [10, 60], [0.2, 0.78], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const R = 120;
