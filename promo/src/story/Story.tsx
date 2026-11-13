@@ -15,27 +15,33 @@ const FPS = 30;
 const s = (sec: number) => Math.round(sec * FPS);
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
-// Male narrator, Kokoro am_michael at 0.95 speed: `python scripts/narration.py am_michael public/audio story`
-const NARRATION: VoiceLine[] = [
-  { file: 'audio/story-vo1.wav', at: 0.4, dur: 3.78 }, // Three weeks of eating clean...
-  { file: 'audio/story-vo2.wav', at: 5.3, dur: 1.51 }, // And the scale went up.
-  { file: 'audio/story-vo3.wav', at: 8.3, dur: 7.04 }, // My friend asked how many calories...
-  { file: 'audio/story-vo4.wav', at: 15.7, dur: 1.86 }, // He told me to just snap it.
-  { file: 'audio/story-vo5.wav', at: 19.6, dur: 5.7 }, // Seven hundred and forty...
-  { file: 'audio/story-vo6.wav', at: 25.9, dur: 5.72 }, // So I kept eating the same stuff...
-  { file: 'audio/story-vo7.wav', at: 32.4, dur: 5.12 }, // Eight weeks later...
+// Male narrator, Kokoro am_michael at 1.12x speed, silence-trimmed:
+// `python scripts/narration.py am_michael public/audio story`. `text` drives the captions.
+const NARRATION: (VoiceLine & { text: string })[] = [
+  { file: 'audio/story-vo1.wav', at: 0.2, dur: 3.23, text: 'Three weeks of eating clean. Salads, chicken, no junk.' },
+  { file: 'audio/story-vo2.wav', at: 3.7, dur: 1.06, text: 'And the scale went up.' },
+  {
+    file: 'audio/story-vo3.wav',
+    at: 5.7,
+    dur: 6.27,
+    text: "My friend asked how many calories I was eating. I said, I don't know. It's a salad. Like, three hundred?",
+  },
+  { file: 'audio/story-vo4.wav', at: 12.2, dur: 1.4, text: 'He told me to just snap it.' },
+  { file: 'audio/story-vo5.wav', at: 14.4, dur: 5.15, text: 'Seven hundred and forty. The dressing alone was more than I thought the whole salad was.' },
+  { file: 'audio/story-vo6.wav', at: 19.8, dur: 5.01, text: 'So I kept eating the same stuff. Just less dressing, and a photo before every meal.' },
+  { file: 'audio/story-vo7.wav', at: 25.2, dur: 4.54, text: 'Eight weeks later, I finally get it. It was never the food. It was the guessing.' },
 ];
 
 const SCENES = [
-  { id: 'notes', from: 0, to: 5 },
-  { id: 'scale', from: 5, to: 8 },
-  { id: 'chat', from: 8, to: 18 },
-  { id: 'scan', from: 18, to: 25.6 },
-  { id: 'weeks', from: 25.6, to: 32 },
-  { id: 'end', from: 32, to: 40 },
+  { id: 'notes', from: 0, to: 3.6 },
+  { id: 'scale', from: 3.6, to: 5.6 },
+  { id: 'chat', from: 5.6, to: 13.6 },
+  { id: 'scan', from: 13.6, to: 19.6 },
+  { id: 'weeks', from: 19.6, to: 25 },
+  { id: 'end', from: 25, to: 31 },
 ] as const;
 
-export const STORY_DURATION = s(40);
+export const STORY_DURATION = s(31);
 
 export const Story: React.FC = () => {
   const map: Record<(typeof SCENES)[number]['id'], React.FC> = {
@@ -60,7 +66,80 @@ export const Story: React.FC = () => {
           </Sequence>
         );
       })}
+      <Captions />
     </AbsoluteFill>
+  );
+};
+
+/* --------------------------------- captions -------------------------------- */
+
+type Word = { w: string; start: number; end: number };
+
+/** Approximate word timings: spread each clip's duration over its words, weighted by length and punctuation. */
+const WORDS: Word[][] = NARRATION.map((line) => {
+  const words = line.text.split(' ');
+  const weight = (w: string) => w.length + 2 + (/[.?!]$/.test(w) ? 6 : /,$/.test(w) ? 3 : 0);
+  const total = words.reduce((a, w) => a + weight(w), 0);
+  let t = line.at + 0.04;
+  const span = line.dur - 0.08;
+  return words.map((w) => {
+    const d = (weight(w) / total) * span;
+    const out = { w, start: t, end: t + d };
+    t += d;
+    return out;
+  });
+});
+
+/** Chunks of up to 3 words, breaking after punctuation, like TikTok auto-captions. */
+const CHUNKS: Word[][] = WORDS.flatMap((line) => {
+  const out: Word[][] = [];
+  let cur: Word[] = [];
+  for (const w of line) {
+    cur.push(w);
+    if (cur.length === 3 || /[.,?!]$/.test(w.w)) {
+      out.push(cur);
+      cur = [];
+    }
+  }
+  if (cur.length) out.push(cur);
+  return out;
+});
+
+const Captions: React.FC = () => {
+  const frame = useCurrentFrame();
+  const t = frame / FPS;
+  const idx = CHUNKS.findIndex((c, i) => t >= c[0].start && t < (CHUNKS[i + 1] && CHUNKS[i + 1][0].start - c[c.length - 1].end < 0.4 ? CHUNKS[i + 1][0].start : c[c.length - 1].end + 0.25));
+  if (idx < 0) return null;
+  const chunk = CHUNKS[idx];
+  const age = t - chunk[0].start;
+  const pop = 0.85 + 0.15 * Math.min(1, age / 0.08);
+  return (
+    <div style={{ position: 'absolute', left: 50, right: 50, top: 1690, textAlign: 'center', zIndex: 20, transform: `scale(${pop})` }}>
+      {chunk.map((w, i) => {
+        const active = t >= w.start && t < w.end + 0.05;
+        return (
+          <span
+            key={i}
+            style={{
+              display: 'inline-block',
+              margin: '0 12px',
+              fontFamily: '"Inter Display", Inter, sans-serif',
+              fontWeight: 900,
+              fontSize: 76,
+              letterSpacing: -1,
+              textTransform: 'uppercase',
+              color: active ? colors.lime : '#fff',
+              WebkitTextStroke: '10px #000',
+              paintOrder: 'stroke fill',
+              textShadow: '0 6px 18px rgba(0,0,0,0.6)',
+              transform: active ? 'scale(1.08)' : 'none',
+            }}
+          >
+            {w.w.replace(/[.,]$/, '')}
+          </span>
+        );
+      })}
+    </div>
   );
 };
 
@@ -69,14 +148,16 @@ export const Story: React.FC = () => {
 /** Soft dip to black between scenes, which reads as "storytelling", not "ad cut". */
 const Fade: React.FC<{ dur: number; first?: boolean; children: React.ReactNode }> = ({ dur, first, children }) => {
   const frame = useCurrentFrame();
-  const o = interpolate(frame, [0, first ? 1 : 8, dur - 8, dur], [0, 1, 1, 0], clamp);
-  return <AbsoluteFill style={{ opacity: o }}>{children}</AbsoluteFill>;
+  const { fps } = useVideoConfig();
+  const o = interpolate(frame, [0, first ? 1 : 3, dur - 3, dur], [0, 1, 1, 0], clamp);
+  const punch = spring({ frame, fps, config: { damping: 14, stiffness: 180 } });
+  return <AbsoluteFill style={{ opacity: o, transform: `scale(${1.14 - 0.14 * punch})` }}>{children}</AbsoluteFill>;
 };
 
 /** Slow drift so still scenes feel filmed. */
 const Drift: React.FC<{ children: React.ReactNode; amount?: number }> = ({ children, amount = 0.05 }) => {
   const frame = useCurrentFrame();
-  return <AbsoluteFill style={{ transform: `scale(${1 + amount * (frame / 300)}) translateY(${-frame * 0.08}px)` }}>{children}</AbsoluteFill>;
+  return <AbsoluteFill style={{ transform: `scale(${1 + amount * 2 * (frame / 150)}) translateY(${-frame * 0.15}px)` }}>{children}</AbsoluteFill>;
 };
 
 const usePop = (delay: number) => {
@@ -153,7 +234,7 @@ const Notes: React.FC = () => {
             <div style={{ color: '#8C857A', fontSize: 30, marginTop: 6 }}>week 3</div>
             <div style={{ marginTop: 50, display: 'flex', flexDirection: 'column', gap: 34 }}>
               {NOTE_ITEMS.map((t, i) => {
-                const d = 10 + i * 18;
+                const d = 4 + i * 11;
                 const p = interpolate(frame, [d, d + 10], [0, 1], clamp);
                 return (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 24, opacity: interpolate(frame, [d - 6, d], [0.25, 1], clamp) }}>
@@ -163,7 +244,7 @@ const Notes: React.FC = () => {
                 );
               })}
             </div>
-            <div style={{ color: '#8C857A', fontSize: 34, marginTop: 70, fontStyle: 'italic', opacity: interpolate(frame, [110, 125], [0, 1], clamp) }}>
+            <div style={{ color: '#8C857A', fontSize: 34, marginTop: 70, fontStyle: 'italic', opacity: interpolate(frame, [62, 72], [0, 1], clamp) }}>
               no junk. no sugar. no excuses.
             </div>
           </div>
@@ -175,8 +256,8 @@ const Notes: React.FC = () => {
 
 const ScaleScene: React.FC = () => {
   const frame = useCurrentFrame();
-  const value = interpolate(frame, [8, 40], [83.9, 84.6], clamp);
-  const settled = frame > 42;
+  const value = interpolate(frame, [3, 22], [83.9, 84.6], clamp);
+  const settled = frame > 23;
   const blink = settled ? 1 : 0.6 + 0.4 * Math.round((Math.sin(frame / 2) + 1) / 2);
   return (
     <AbsoluteFill>
@@ -245,7 +326,7 @@ const ScaleScene: React.FC = () => {
           </svg>
         ))}
       </Drift>
-      <ScaleDelta at={43} />
+      <ScaleDelta at={24} />
     </AbsoluteFill>
   );
 };
@@ -262,11 +343,11 @@ const ScaleDelta: React.FC<{ at: number }> = ({ at }) => {
 
 type Msg = { from: 'them' | 'me'; text: string; at: number };
 const MESSAGES: Msg[] = [
-  { from: 'them', text: 'how many calories are you actually eating?', at: 0.8 },
-  { from: 'me', text: "idk it's a salad", at: 3.2 },
-  { from: 'me', text: 'like 300?', at: 5.2 },
-  { from: 'them', text: 'just snap it', at: 7.8 },
-  { from: 'them', text: "you're guessing bro", at: 8.6 },
+  { from: 'them', text: 'how many calories are you actually eating?', at: 0.7 },
+  { from: 'me', text: "idk it's a salad", at: 3.3 },
+  { from: 'me', text: 'like 300?', at: 5.0 },
+  { from: 'them', text: 'just snap it', at: 6.6 },
+  { from: 'them', text: "you're guessing bro", at: 7.3 },
 ];
 
 const Chat: React.FC = () => {
@@ -339,10 +420,10 @@ const BREAKDOWN: { item: string; kcal: number; hot?: boolean }[] = [
 const Scan: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const flash = interpolate(frame, [s(0.8), s(0.8) + 2, s(0.8) + 10], [0, 0.9, 0], clamp);
-  const sheet = spring({ frame: frame - s(1.1), fps, config: { damping: 18, stiffness: 110 } });
-  const total = Math.round(interpolate(frame, [s(1.3), s(2.4)], [0, 740], { ...clamp, easing: (t) => 1 - Math.pow(1 - t, 3) }));
-  const hot = interpolate(frame, [s(3.4), s(3.8)], [0, 1], clamp);
+  const flash = interpolate(frame, [s(0.4), s(0.4) + 2, s(0.4) + 8], [0, 0.9, 0], clamp);
+  const sheet = spring({ frame: frame - s(0.6), fps, config: { damping: 18, stiffness: 110 } });
+  const total = Math.round(interpolate(frame, [s(0.8), s(1.7)], [0, 740], { ...clamp, easing: (t) => 1 - Math.pow(1 - t, 3) }));
+  const hot = interpolate(frame, [s(2.4), s(2.7)], [0, 1], clamp);
   return (
     <AbsoluteFill style={{ background: '#0A0908' }}>
       <Drift amount={0.03}>
@@ -376,7 +457,7 @@ const Scan: React.FC = () => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {BREAKDOWN.map((b, i) => (
-                <BreakdownRow key={b.item} {...b} delay={s(1.6) + i * 5} glow={b.hot ? hot : 0} />
+                <BreakdownRow key={b.item} {...b} delay={s(1.0) + i * 4} glow={b.hot ? hot : 0} />
               ))}
             </div>
           </div>
@@ -409,7 +490,7 @@ const BreakdownRow: React.FC<{ item: string; kcal: number; delay: number; glow: 
 
 const Weeks: React.FC = () => {
   const frame = useCurrentFrame();
-  const dur = s(6.4);
+  const dur = s(5.4);
   const t = interpolate(frame, [10, dur - 30], [0, 1], clamp);
   const week = Math.min(8, 1 + Math.floor(t * 8));
   const kg = 84.6 - t * 4.7;
@@ -432,9 +513,9 @@ const Weeks: React.FC = () => {
         {pts.map((p, i) => (i / 8 <= t ? <circle key={i} cx={p[0]} cy={p[1]} r={12} fill={colors.lime} /> : null))}
       </svg>
       {/* meals being logged */}
-      <div style={{ position: 'absolute', top: 1380, left: 60, right: 60, display: 'flex', flexWrap: 'wrap', gap: 22, justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', top: 1290, left: 60, right: 60, display: 'flex', flexWrap: 'wrap', gap: 22, justifyContent: 'center' }}>
         {Array.from({ length: 10 }).map((_, i) => (
-          <MealChip key={i} delay={14 + i * 14} seed={i} />
+          <MealChip key={i} delay={8 + i * 11} seed={i} />
         ))}
       </div>
     </AbsoluteFill>
@@ -469,9 +550,9 @@ const MealChip: React.FC<{ delay: number; seed: number }> = ({ delay, seed }) =>
 
 const End: React.FC = () => {
   const frame = useCurrentFrame();
-  const l1 = interpolate(frame, [s(2.4), s(3.0)], [0, 1], clamp);
-  const l2 = interpolate(frame, [s(3.5), s(4.1)], [0, 1], clamp);
-  const brand = interpolate(frame, [s(5.6), s(6.4)], [0, 1], clamp);
+  const l1 = interpolate(frame, [s(2.2), s(2.6)], [0, 1], clamp);
+  const l2 = interpolate(frame, [s(3.4), s(3.8)], [0, 1], clamp);
+  const brand = interpolate(frame, [s(4.7), s(5.3)], [0, 1], clamp);
   const serif = 'Georgia, "DejaVu Serif", serif';
   return (
     <AbsoluteFill style={{ background: '#0A0908', alignItems: 'center', justifyContent: 'center' }}>

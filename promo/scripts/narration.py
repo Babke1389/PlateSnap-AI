@@ -6,7 +6,7 @@ Setup:  pip install kokoro-onnx soundfile
 Usage:  python scripts/narration.py [voice] [out_dir] [set]   (default: af_heart public/audio promo)
         set "fdoe" writes the "full day of eating" lines as fdoe-vo1..8.wav,
         set "triceps" writes tri-vo1..6.wav (used with voice am_michael),
-        set "story" writes story-vo1..7.wav (am_michael, slightly slower)
+        set "story" writes story-vo1..7.wav (am_michael, 1.12x speed)
 If line lengths change, update `dur` in src/Soundtrack.tsx (printed below).
 """
 import os
@@ -60,6 +60,6 @@ elif which == "story":
 elif which == "triceps":
     lines, prefix = TRICEPS, "tri-vo"
 for i, t in enumerate(lines):
-    a, sr = k.create(t, voice=voice, speed=0.95 if which == "story" else 1.0, lang="en-us")
+    a, sr = k.create(t, voice=voice, speed=1.12 if which == "story" else 1.0, lang="en-us")
     sf.write(f"{out}/{prefix}{i+1}.wav", a, sr)
     print(i+1, round(len(a)/sr, 2))
