@@ -114,7 +114,7 @@ const Captions: React.FC = () => {
   const age = t - chunk[0].start;
   const pop = 0.85 + 0.15 * Math.min(1, age / 0.08);
   return (
-    <div style={{ position: 'absolute', left: 50, right: 50, top: 1690, textAlign: 'center', zIndex: 20, transform: `scale(${pop})` }}>
+    <div style={{ position: 'absolute', left: 50, right: 50, top: 1120, textAlign: 'center', zIndex: 20, transform: `scale(${pop})` }}>
       {chunk.map((w, i) => {
         const active = t >= w.start && t < w.end + 0.05;
         return (
