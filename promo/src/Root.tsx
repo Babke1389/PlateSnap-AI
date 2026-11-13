@@ -3,6 +3,7 @@ import { PlatesnapPromo, PROMO_DURATION } from './PlatesnapPromo';
 import { FullDayOfEating, FDOE_DURATION } from './fdoe/FullDayOfEating';
 import { TierSlideshow, TIER_DURATION } from './tier/TierSlideshow';
 import { TricepsGuide, TRICEPS_DURATION } from './triceps/TricepsGuide';
+import { Story, STORY_DURATION } from './story/Story';
 
 export const RemotionRoot: React.FC = () => (
   <>
@@ -38,5 +39,6 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
     />
+    <Composition id="GuessingStory" component={Story} durationInFrames={STORY_DURATION} fps={30} width={1080} height={1920} />
   </>
 );

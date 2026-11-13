@@ -74,3 +74,15 @@ line timings are in `NARRATION` in `src/triceps/TricepsGuide.tsx`.
 ```bash
 npx remotion render TricepsGuide out/platesnap-triceps-guide.mp4
 ```
+
+## Fifth video: storytime, "it was the guessing" (`GuessingStory`)
+
+A 40 s first-person story that doesn't play like an ad: three weeks of "eating clean", the scale
+goes up, a friend says "just snap it", the salad turns out to be 740 kcal (dressing 280), eight
+weeks of logging, and a quiet end card. The brand only appears in the last seconds.
+Male narration (Kokoro `am_michael`, 0.95 speed) via `python scripts/narration.py am_michael public/audio story`;
+music via `python scripts/music.py public/audio/story-music.wav 41 72 8 55`.
+
+```bash
+npx remotion render GuessingStory out/platesnap-story-guessing.mp4
+```

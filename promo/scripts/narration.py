@@ -5,7 +5,8 @@ Setup:  pip install kokoro-onnx soundfile
         https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
 Usage:  python scripts/narration.py [voice] [out_dir] [set]   (default: af_heart public/audio promo)
         set "fdoe" writes the "full day of eating" lines as fdoe-vo1..8.wav,
-        set "triceps" writes tri-vo1..6.wav (used with voice am_michael)
+        set "triceps" writes tri-vo1..6.wav (used with voice am_michael),
+        set "story" writes story-vo1..7.wav (am_michael, slightly slower)
 If line lengths change, update `dur` in src/Soundtrack.tsx (printed below).
 """
 import os
@@ -35,6 +36,15 @@ TRICEPS = [
  "Let the weight stretch you behind your head, then lock out.",
  "Set the cable low, and do three sets of ten to twelve, slow on the way down.",
 ]
+STORY = [
+ "Three weeks of eating clean. Salads, chicken, no junk.",
+ "And the scale went up.",
+ "My friend asked how many calories I was eating. I said, I don't know. It's a salad. Like, three hundred?",
+ "He told me to just snap it.",
+ "Seven hundred and forty. The dressing alone was more than I thought the whole salad was.",
+ "So I kept eating the same stuff. Just less dressing, and a photo before every meal.",
+ "Eight weeks later, I finally get it. It was never the food. It was the guessing.",
+]
 lines = [
  "Snap your plate. Know your calories.",
  "PlateSnap AI scans your meal, and estimates calories and macros in seconds.",
@@ -45,9 +55,11 @@ lines = [
 prefix = "vo"
 if which == "fdoe":
     lines, prefix = FDOE, "fdoe-vo"
+elif which == "story":
+    lines, prefix = STORY, "story-vo"
 elif which == "triceps":
     lines, prefix = TRICEPS, "tri-vo"
 for i, t in enumerate(lines):
-    a, sr = k.create(t, voice=voice, speed=1.0, lang="en-us")
+    a, sr = k.create(t, voice=voice, speed=0.95 if which == "story" else 1.0, lang="en-us")
     sf.write(f"{out}/{prefix}{i+1}.wav", a, sr)
     print(i+1, round(len(a)/sr, 2))
