@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { colors, fontFamily } from '../theme';
 import { Soundtrack, VoiceLine } from '../Soundtrack';
@@ -7,68 +7,76 @@ import { Grade } from '../tier/art';
 import { Logo } from '../PlatesnapPromo';
 
 /*
- * "It was the guessing" — a first-person storytime video. The app shows up as part of
- * the story (a friend says "just snap it"), not as a pitch; the brand only appears at the very end.
+ * Storytime kit: a first-person story told through phone notes, a scale, a chat, a meal scan,
+ * a progress montage and a quiet end card. Each story is a StoryConfig (see stories.tsx);
+ * the app shows up inside the story, and the brand only at the very end.
  */
 
 const FPS = 30;
-const s = (sec: number) => Math.round(sec * FPS);
+export const s = (sec: number) => Math.round(sec * FPS);
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
-// Male narrator, Kokoro am_michael at 1.12x speed, silence-trimmed:
-// `python scripts/narration.py am_michael public/audio story`. `text` drives the captions.
-const NARRATION: (VoiceLine & { text: string })[] = [
-  { file: 'audio/story-vo1.wav', at: 0.2, dur: 3.23, text: 'Three weeks of eating clean. Salads, chicken, no junk.' },
-  { file: 'audio/story-vo2.wav', at: 3.7, dur: 1.06, text: 'And the scale went up.' },
-  {
-    file: 'audio/story-vo3.wav',
-    at: 5.7,
-    dur: 6.27,
-    text: "My friend asked how many calories I was eating. I said, I don't know. It's a salad. Like, three hundred?",
-  },
-  { file: 'audio/story-vo4.wav', at: 12.2, dur: 1.4, text: 'He told me to just snap it.' },
-  { file: 'audio/story-vo5.wav', at: 14.4, dur: 5.15, text: 'Seven hundred and forty. The dressing alone was more than I thought the whole salad was.' },
-  { file: 'audio/story-vo6.wav', at: 19.8, dur: 5.01, text: 'So I kept eating the same stuff. Just less dressing, and a photo before every meal.' },
-  { file: 'audio/story-vo7.wav', at: 25.2, dur: 4.54, text: 'Eight weeks later, I finally get it. It was never the food. It was the guessing.' },
-];
+export type SceneId = 'notes' | 'scale' | 'chat' | 'scan' | 'weeks' | 'end';
+export type Msg = { from: 'them' | 'me'; text: string; at: number };
 
-const SCENES = [
-  { id: 'notes', from: 0, to: 3.6 },
-  { id: 'scale', from: 3.6, to: 5.6 },
-  { id: 'chat', from: 5.6, to: 13.6 },
-  { id: 'scan', from: 13.6, to: 19.6 },
-  { id: 'weeks', from: 19.6, to: 25 },
-  { id: 'end', from: 25, to: 31 },
-] as const;
-
-export const STORY_DURATION = s(31);
-
-export const Story: React.FC = () => {
-  const map: Record<(typeof SCENES)[number]['id'], React.FC> = {
-    notes: Notes,
-    scale: ScaleScene,
-    chat: Chat,
-    scan: Scan,
-    weeks: Weeks,
-    end: End,
+export type StoryConfig = {
+  /** Seconds. */
+  duration: number;
+  music: string;
+  /** `text` drives the captions. */
+  narration: (VoiceLine & { text: string })[];
+  scenes: { id: SceneId; from: number; to: number }[];
+  notes: { title: string; subtitle: string; items: string[]; footer: string };
+  scale: { from: number; to: number; delta: string; deltaLabel: string };
+  /** Message times are seconds from the start of the chat scene. */
+  chat: { name: string; messages: Msg[] };
+  /** Times are seconds from the start of the scan scene. */
+  scan: {
+    dish: string;
+    food: React.ReactNode;
+    total: number;
+    shutterAt: number;
+    hotAt: number;
+    breakdown: { item: string; kcal: number; hot?: boolean }[];
+    banner?: { text: string; at: number };
   };
-  return (
-    <AbsoluteFill style={{ backgroundColor: '#0A0908', fontFamily }}>
-      <Soundtrack totalFrames={STORY_DURATION} music="audio/story-music.wav" lines={NARRATION} full={0.6} ducked={0.2} />
-      {SCENES.map((sc, i) => {
-        const C = map[sc.id];
-        return (
-          <Sequence key={sc.id} from={s(sc.from)} durationInFrames={s(sc.to - sc.from)} name={sc.id}>
-            <Fade dur={s(sc.to - sc.from)} first={i === 0}>
-              <C />
-            </Fade>
-            <Grade seed={i + 11} />
-          </Sequence>
-        );
-      })}
-      <Captions />
-    </AbsoluteFill>
-  );
+  weeks: { from: number; to: number; count: number };
+  /** Times are seconds from the start of the end scene. */
+  end: { line1: string; line2: string; l1At: number; l2At: number; brandAt: number };
+};
+
+const Cfg = createContext<StoryConfig | null>(null);
+const useCfg = () => {
+  const c = useContext(Cfg);
+  if (!c) throw new Error('StoryConfig missing');
+  return c;
+};
+
+export const makeStory = (cfg: StoryConfig): React.FC => {
+  const StoryComp: React.FC = () => {
+    const map: Record<SceneId, React.FC> = { notes: Notes, scale: ScaleScene, chat: Chat, scan: Scan, weeks: Weeks, end: End };
+    const total = s(cfg.duration);
+    return (
+      <Cfg.Provider value={cfg}>
+        <AbsoluteFill style={{ backgroundColor: '#0A0908', fontFamily }}>
+          <Soundtrack totalFrames={total} music={cfg.music} lines={cfg.narration} full={0.6} ducked={0.2} />
+          {cfg.scenes.map((sc, i) => {
+            const C = map[sc.id];
+            return (
+              <Sequence key={sc.id} from={s(sc.from)} durationInFrames={s(sc.to - sc.from)} name={sc.id}>
+                <Fade dur={s(sc.to - sc.from)} first={i === 0}>
+                  <C />
+                </Fade>
+                <Grade seed={i + 11} />
+              </Sequence>
+            );
+          })}
+          <Captions />
+        </AbsoluteFill>
+      </Cfg.Provider>
+    );
+  };
+  return StoryComp;
 };
 
 /* --------------------------------- captions -------------------------------- */
@@ -76,37 +84,40 @@ export const Story: React.FC = () => {
 type Word = { w: string; start: number; end: number };
 
 /** Approximate word timings: spread each clip's duration over its words, weighted by length and punctuation. */
-const WORDS: Word[][] = NARRATION.map((line) => {
-  const words = line.text.split(' ');
-  const weight = (w: string) => w.length + 2 + (/[.?!]$/.test(w) ? 6 : /,$/.test(w) ? 3 : 0);
-  const total = words.reduce((a, w) => a + weight(w), 0);
-  let t = line.at + 0.04;
-  const span = line.dur - 0.08;
-  return words.map((w) => {
-    const d = (weight(w) / total) * span;
-    const out = { w, start: t, end: t + d };
-    t += d;
+const buildChunks = (narration: StoryConfig['narration']): Word[][] => {
+  const words = narration.map((line) => {
+    const ws = line.text.split(' ');
+    const weight = (w: string) => w.length + 2 + (/[.?!]$/.test(w) ? 6 : /,$/.test(w) ? 3 : 0);
+    const total = ws.reduce((a, w) => a + weight(w), 0);
+    let t = line.at + 0.04;
+    const span = line.dur - 0.08;
+    return ws.map((w) => {
+      const d = (weight(w) / total) * span;
+      const out = { w, start: t, end: t + d };
+      t += d;
+      return out;
+    });
+  });
+  // Chunks of up to 3 words, breaking after punctuation, like TikTok auto-captions.
+  return words.flatMap((line) => {
+    const out: Word[][] = [];
+    let cur: Word[] = [];
+    for (const w of line) {
+      cur.push(w);
+      if (cur.length === 3 || /[.,?!]$/.test(w.w)) {
+        out.push(cur);
+        cur = [];
+      }
+    }
+    if (cur.length) out.push(cur);
     return out;
   });
-});
-
-/** Chunks of up to 3 words, breaking after punctuation, like TikTok auto-captions. */
-const CHUNKS: Word[][] = WORDS.flatMap((line) => {
-  const out: Word[][] = [];
-  let cur: Word[] = [];
-  for (const w of line) {
-    cur.push(w);
-    if (cur.length === 3 || /[.,?!]$/.test(w.w)) {
-      out.push(cur);
-      cur = [];
-    }
-  }
-  if (cur.length) out.push(cur);
-  return out;
-});
+};
 
 const Captions: React.FC = () => {
   const frame = useCurrentFrame();
+  const { narration } = useCfg();
+  const CHUNKS = useMemo(() => buildChunks(narration), [narration]);
   const t = frame / FPS;
   const idx = CHUNKS.findIndex((c, i) => t >= c[0].start && t < (CHUNKS[i + 1] && CHUNKS[i + 1][0].start - c[c.length - 1].end < 0.4 ? CHUNKS[i + 1][0].start : c[c.length - 1].end + 0.25));
   if (idx < 0) return null;
@@ -122,7 +133,7 @@ const Captions: React.FC = () => {
             key={i}
             style={{
               display: 'inline-block',
-              margin: '0 12px',
+              margin: '0 20px',
               fontFamily: '"Inter Display", Inter, sans-serif',
               fontWeight: 900,
               fontSize: 76,
@@ -201,39 +212,21 @@ const Check: React.FC<{ progress: number; color?: string }> = ({ progress, color
   </svg>
 );
 
-const Salad: React.FC<{ size: number }> = ({ size }) => (
-  <Bowl
-    size={size}
-    seed={91}
-    base="#4E8F3A"
-    rim="#ECE6DA"
-    drizzle="#F4E7C2"
-    pieces={[
-      { kind: 'leaf', colors: ['#7BC043', '#5FA834', '#9AD45A', '#4E9A2E'], count: 70, size: 22 },
-      { kind: 'chunk', colors: ['#E9C9A0', '#DDB98C', '#F0D6B2'], count: 16, size: 20 },
-      { kind: 'cube', colors: ['#E3B04B', '#D49A35'], count: 14, size: 16 },
-      { kind: 'dot', colors: ['#FFF8E7', '#F7EED6'], count: 40, size: 9 },
-      { kind: 'dot', colors: ['#E8483B'], count: 8, size: 16 },
-    ]}
-  />
-);
-
 /* ---------------------------------- scenes --------------------------------- */
-
-const NOTE_ITEMS = ['chicken salad', 'grilled chicken + rice', 'chicken salad', 'salad, no bread', 'chicken salad again'];
 
 const Notes: React.FC = () => {
   const frame = useCurrentFrame();
+  const { notes } = useCfg();
   return (
     <AbsoluteFill style={{ background: 'radial-gradient(circle at 50% 40%, #2A2420, #0A0908 70%)' }}>
       <Drift>
         <PhoneBody top={250}>
           <div style={{ position: 'absolute', inset: 0, background: '#16130F', padding: '130px 60px', boxSizing: 'border-box' }}>
             <div style={{ color: '#E8B04B', fontSize: 30, fontWeight: 600 }}>‹ Notes</div>
-            <div style={{ color: '#F3EEE6', fontSize: 58, fontWeight: 800, marginTop: 40, letterSpacing: -1 }}>eating clean</div>
-            <div style={{ color: '#8C857A', fontSize: 30, marginTop: 6 }}>week 3</div>
+            <div style={{ color: '#F3EEE6', fontSize: 58, fontWeight: 800, marginTop: 40, letterSpacing: -1 }}>{notes.title}</div>
+            <div style={{ color: '#8C857A', fontSize: 30, marginTop: 6 }}>{notes.subtitle}</div>
             <div style={{ marginTop: 50, display: 'flex', flexDirection: 'column', gap: 34 }}>
-              {NOTE_ITEMS.map((t, i) => {
+              {notes.items.map((t, i) => {
                 const d = 4 + i * 11;
                 const p = interpolate(frame, [d, d + 10], [0, 1], clamp);
                 return (
@@ -245,7 +238,7 @@ const Notes: React.FC = () => {
               })}
             </div>
             <div style={{ color: '#8C857A', fontSize: 34, marginTop: 70, fontStyle: 'italic', opacity: interpolate(frame, [62, 72], [0, 1], clamp) }}>
-              no junk. no sugar. no excuses.
+              {notes.footer}
             </div>
           </div>
         </PhoneBody>
@@ -256,7 +249,8 @@ const Notes: React.FC = () => {
 
 const ScaleScene: React.FC = () => {
   const frame = useCurrentFrame();
-  const value = interpolate(frame, [3, 22], [83.9, 84.6], clamp);
+  const { scale } = useCfg();
+  const value = interpolate(frame, [3, 22], [scale.from, scale.to], clamp);
   const settled = frame > 23;
   const blink = settled ? 1 : 0.6 + 0.4 * Math.round((Math.sin(frame / 2) + 1) / 2);
   return (
@@ -333,36 +327,29 @@ const ScaleScene: React.FC = () => {
 
 const ScaleDelta: React.FC<{ at: number }> = ({ at }) => {
   const style = usePop(at);
+  const { scale } = useCfg();
   return (
     <div style={{ position: 'absolute', top: 1400, left: 0, right: 0, textAlign: 'center', ...style }}>
-      <span style={{ color: '#FF6B5B', fontSize: 64, fontWeight: 800 }}>+0.4 kg</span>
-      <div style={{ color: '#CFC7BA', fontSize: 36, marginTop: 8 }}>since week 1</div>
+      <span style={{ color: '#FF6B5B', fontSize: 64, fontWeight: 800 }}>{scale.delta}</span>
+      <div style={{ color: '#CFC7BA', fontSize: 36, marginTop: 8 }}>{scale.deltaLabel}</div>
     </div>
   );
 };
 
-type Msg = { from: 'them' | 'me'; text: string; at: number };
-const MESSAGES: Msg[] = [
-  { from: 'them', text: 'how many calories are you actually eating?', at: 0.7 },
-  { from: 'me', text: "idk it's a salad", at: 3.3 },
-  { from: 'me', text: 'like 300?', at: 5.0 },
-  { from: 'them', text: 'just snap it', at: 6.6 },
-  { from: 'them', text: "you're guessing bro", at: 7.3 },
-];
-
 const Chat: React.FC = () => {
   const frame = useCurrentFrame();
+  const { chat } = useCfg();
   return (
     <AbsoluteFill style={{ background: 'radial-gradient(circle at 50% 40%, #232024, #0A0908 70%)' }}>
       <Drift amount={0.04}>
         <PhoneBody top={250}>
           <div style={{ position: 'absolute', inset: 0, background: '#0E0F12', fontFamily }}>
             <div style={{ height: 230, borderBottom: '2px solid #202228', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 24, boxSizing: 'border-box' }}>
-              <div style={{ width: 84, height: 84, borderRadius: 42, background: '#3B6FD8', color: '#fff', fontSize: 40, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>L</div>
-              <div style={{ color: '#E9EAEE', fontSize: 30, fontWeight: 600, marginTop: 10 }}>Luka</div>
+              <div style={{ width: 84, height: 84, borderRadius: 42, background: '#3B6FD8', color: '#fff', fontSize: 40, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{chat.name[0]}</div>
+              <div style={{ color: '#E9EAEE', fontSize: 30, fontWeight: 600, marginTop: 10 }}>{chat.name}</div>
             </div>
             <div style={{ padding: '40px 36px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {MESSAGES.map((m, i) => {
+              {chat.messages.map((m, i) => {
                 const start = s(m.at);
                 if (frame < start - (m.from === 'them' ? 20 : 0)) return null;
                 const typing = m.from === 'them' && frame < start;
@@ -409,21 +396,16 @@ const Bubble: React.FC<{ msg: Msg; typing: boolean; start: number }> = ({ msg, t
   );
 };
 
-const BREAKDOWN: { item: string; kcal: number; hot?: boolean }[] = [
-  { item: 'caesar dressing', kcal: 280, hot: true },
-  { item: 'chicken breast', kcal: 160 },
-  { item: 'parmesan', kcal: 150 },
-  { item: 'croutons', kcal: 120 },
-  { item: 'lettuce + tomato', kcal: 30 },
-];
-
 const Scan: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const flash = interpolate(frame, [s(0.4), s(0.4) + 2, s(0.4) + 8], [0, 0.9, 0], clamp);
-  const sheet = spring({ frame: frame - s(0.6), fps, config: { damping: 18, stiffness: 110 } });
-  const total = Math.round(interpolate(frame, [s(0.8), s(1.7)], [0, 740], { ...clamp, easing: (t) => 1 - Math.pow(1 - t, 3) }));
-  const hot = interpolate(frame, [s(2.4), s(2.7)], [0, 1], clamp);
+  const { scan } = useCfg();
+  const t0 = scan.shutterAt;
+  const flash = interpolate(frame, [s(t0), s(t0) + 2, s(t0) + 8], [0, 0.9, 0], clamp);
+  const sheet = spring({ frame: frame - s(t0 + 0.2), fps, config: { damping: 18, stiffness: 110 } });
+  const total = Math.round(interpolate(frame, [s(t0 + 0.4), s(t0 + 1.3)], [0, scan.total], { ...clamp, easing: (t) => 1 - Math.pow(1 - t, 3) }));
+  const hot = interpolate(frame, [s(scan.hotAt), s(scan.hotAt + 0.3)], [0, 1], clamp);
+  const banner = scan.banner ? interpolate(frame, [s(scan.banner.at), s(scan.banner.at + 0.25)], [0, 1], clamp) : 0;
   return (
     <AbsoluteFill style={{ background: '#0A0908' }}>
       <Drift amount={0.03}>
@@ -432,8 +414,26 @@ const Scan: React.FC = () => {
             <Surface kind="desk" />
           </AbsoluteFill>
           <div style={{ position: 'absolute', left: 40, top: 180 }}>
-            <Salad size={620} />
+            {scan.food}
           </div>
+          {scan.banner ? (
+            <div
+              style={{
+                position: 'absolute',
+                top: 120,
+                left: 0,
+                right: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                opacity: banner * (1 - flash),
+                transform: `translateY(${(1 - banner) * -30}px)`,
+              }}
+            >
+              <div style={{ padding: '18px 34px', borderRadius: 999, background: 'rgba(11,13,18,0.9)', border: `2px solid ${colors.orange}`, color: colors.textPrimary, fontSize: 32, fontWeight: 700 }}>
+                {scan.banner.text}
+              </div>
+            </div>
+          ) : null}
           <div style={{ position: 'absolute', inset: 0, background: '#fff', opacity: flash }} />
           <div
             style={{
@@ -450,14 +450,14 @@ const Scan: React.FC = () => {
               boxSizing: 'border-box',
             }}
           >
-            <div style={{ color: colors.textSecondary, fontSize: 30, fontWeight: 600 }}>Chicken caesar salad</div>
+            <div style={{ color: colors.textSecondary, fontSize: 30, fontWeight: 600 }}>{scan.dish}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', marginTop: 6, marginBottom: 30 }}>
               <span style={{ color: colors.textPrimary, fontSize: 130, fontWeight: 800, letterSpacing: -4 }}>{total}</span>
               <span style={{ color: colors.lime, fontSize: 46, fontWeight: 700, marginLeft: 14 }}>kcal</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {BREAKDOWN.map((b, i) => (
-                <BreakdownRow key={b.item} {...b} delay={s(1.0) + i * 4} glow={b.hot ? hot : 0} />
+              {scan.breakdown.map((b, i) => (
+                <BreakdownRow key={b.item} {...b} delay={s(t0 + 0.6) + i * 4} glow={b.hot ? hot : 0} />
               ))}
             </div>
           </div>
@@ -490,13 +490,16 @@ const BreakdownRow: React.FC<{ item: string; kcal: number; delay: number; glow: 
 
 const Weeks: React.FC = () => {
   const frame = useCurrentFrame();
-  const dur = s(5.4);
+  const { durationInFrames: dur } = useVideoConfig();
+  const { weeks: wk } = useCfg();
   const t = interpolate(frame, [10, dur - 30], [0, 1], clamp);
-  const week = Math.min(8, 1 + Math.floor(t * 8));
-  const kg = 84.6 - t * 4.7;
+  const week = Math.min(wk.count, 1 + Math.floor(t * wk.count));
+  const kg = wk.from + (wk.to - wk.from) * t;
+  const lo = Math.min(wk.from, wk.to) - 0.3;
+  const hi = Math.max(wk.from, wk.to) + 0.3;
   const pts = Array.from({ length: 9 }, (_, i) => {
-    const w = 84.6 - (4.7 * i) / 8 + Math.sin(i * 1.7) * 0.25;
-    return [80 + i * 105, 200 + (84.8 - w) * 95] as [number, number];
+    const w = wk.from + ((wk.to - wk.from) * i) / 8 + Math.sin(i * 1.7) * 0.25;
+    return [80 + i * 105, 40 + ((hi - w) / (hi - lo)) * 400] as [number, number];
   });
   const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]} ${p[1]}`).join(' ');
   return (
@@ -550,18 +553,19 @@ const MealChip: React.FC<{ delay: number; seed: number }> = ({ delay, seed }) =>
 
 const End: React.FC = () => {
   const frame = useCurrentFrame();
-  const l1 = interpolate(frame, [s(2.2), s(2.6)], [0, 1], clamp);
-  const l2 = interpolate(frame, [s(3.4), s(3.8)], [0, 1], clamp);
-  const brand = interpolate(frame, [s(4.7), s(5.3)], [0, 1], clamp);
+  const { end } = useCfg();
+  const l1 = interpolate(frame, [s(end.l1At), s(end.l1At + 0.4)], [0, 1], clamp);
+  const l2 = interpolate(frame, [s(end.l2At), s(end.l2At + 0.4)], [0, 1], clamp);
+  const brand = interpolate(frame, [s(end.brandAt), s(end.brandAt + 0.6)], [0, 1], clamp);
   const serif = 'Georgia, "DejaVu Serif", serif';
   return (
     <AbsoluteFill style={{ background: '#0A0908', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', marginTop: -160 }}>
         <div style={{ color: '#CFC7BA', fontSize: 66, fontFamily: serif, fontStyle: 'italic', opacity: l1, transform: `translateY(${(1 - l1) * 20}px)` }}>
-          it was never the food.
+          {end.line1}
         </div>
         <div style={{ color: '#F5F2EC', fontSize: 78, fontFamily: serif, marginTop: 30, opacity: l2, transform: `translateY(${(1 - l2) * 20}px)` }}>
-          it was the guessing.
+          {end.line2}
         </div>
       </div>
       <div style={{ position: 'absolute', bottom: 300, display: 'flex', alignItems: 'center', gap: 22, opacity: brand }}>

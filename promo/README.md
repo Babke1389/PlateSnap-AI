@@ -86,3 +86,17 @@ music via `python scripts/music.py public/audio/story-music.wav 32 88 3.6 55`.
 ```bash
 npx remotion render GuessingStory out/platesnap-story-guessing.mp4
 ```
+
+## Sixth video: storytime, "I was a hard guesser" (`HardgainerStory`)
+
+The bulking counterpart (33 s): six months of "eating a lot", still 65 kg, a gym partner says
+"snap every meal", the biggest day is only 1,890 kcal and breakfast 340, then +5 kg in ten weeks.
+Narration: `python scripts/narration.py am_michael public/audio bulk` (then the same loudnorm +
+silenceremove as the first story); music: `python scripts/music.py public/audio/bulk-music.wav 34 90 4.2 77`.
+
+Both stories are configs in `src/story/stories.tsx` on top of the shared `src/story/StoryKit.tsx`
+(notes, scale, chat, scan, progress, end card, captions). A new story is a new `StoryConfig`.
+
+```bash
+npx remotion render HardgainerStory out/platesnap-story-hardgainer.mp4
+```

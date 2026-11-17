@@ -6,7 +6,8 @@ Setup:  pip install kokoro-onnx soundfile
 Usage:  python scripts/narration.py [voice] [out_dir] [set]   (default: af_heart public/audio promo)
         set "fdoe" writes the "full day of eating" lines as fdoe-vo1..8.wav,
         set "triceps" writes tri-vo1..6.wav (used with voice am_michael),
-        set "story" writes story-vo1..7.wav (am_michael, 1.12x speed)
+        set "story" writes story-vo1..7.wav (am_michael, 1.12x speed),
+        set "bulk" writes bulk-vo1..7.wav (am_michael, 1.12x speed)
 If line lengths change, update `dur` in src/Soundtrack.tsx (printed below).
 """
 import os
@@ -45,6 +46,15 @@ STORY = [
  "So I kept eating the same stuff. Just less dressing, and a photo before every meal.",
  "Eight weeks later, I finally get it. It was never the food. It was the guessing.",
 ]
+BULK = [
+ "Six months of eating a lot. Three meals a day, sometimes four.",
+ "Still sixty-five kilos.",
+ "My gym partner asked what I actually eat. I said, I don't know, a lot? Like, three thousand calories?",
+ "He said, snap every meal for a week.",
+ "Nineteen hundred. On my biggest day. My breakfast was three hundred and forty calories.",
+ "So I didn't change much. Bigger breakfast, a shake, and a photo before every meal.",
+ "Plus five kilos in ten weeks. I wasn't a hardgainer. I was a hard guesser.",
+]
 lines = [
  "Snap your plate. Know your calories.",
  "PlateSnap AI scans your meal, and estimates calories and macros in seconds.",
@@ -57,9 +67,11 @@ if which == "fdoe":
     lines, prefix = FDOE, "fdoe-vo"
 elif which == "story":
     lines, prefix = STORY, "story-vo"
+elif which == "bulk":
+    lines, prefix = BULK, "bulk-vo"
 elif which == "triceps":
     lines, prefix = TRICEPS, "tri-vo"
 for i, t in enumerate(lines):
-    a, sr = k.create(t, voice=voice, speed=1.12 if which == "story" else 1.0, lang="en-us")
+    a, sr = k.create(t, voice=voice, speed=1.12 if which in ("story", "bulk") else 1.0, lang="en-us")
     sf.write(f"{out}/{prefix}{i+1}.wav", a, sr)
     print(i+1, round(len(a)/sr, 2))
